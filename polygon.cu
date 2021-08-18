@@ -31,18 +31,6 @@ __device__ int count_BarrierEdges(int *poly, int length_poly){
     return count;
 }
 
-__device__ has_bet(int *poly, int length_poly){
-    int count = 0;
-    int x, y,i;
-    for (i = 0; i < length_poly; i++)
-    {
-        x = i % length_poly;
-        y = (i+2) % length_poly;
-        if (poly[x] == poly[y])
-            return 1;
-    }
-    return 0;
-}
 
 /*Indica si un triangulo contiene al punto endpoint*/
 __device__ int is_continuous(int i, int endpoint, int *p ){
@@ -72,7 +60,7 @@ __device__ int is_continuous(int i, int endpoint, int *p ){
  * */
 
  __device__ int get_adjacent_triangle(int i, int k, int l, int *p, int *adj){
-	return adj[3*i + get_edge(i, k, l, p)];
+	return adj[3*i + get_shared_edge(i, k, l, p)];
 }
 
 
@@ -86,9 +74,9 @@ __device__ int get_adjacent_triangle_share_endpoint(int i, int origen, int endpo
 	int p2 = p[3*i + 2];
 	
 	/* consigue los triangulos adyacentes */
-	int i0 = get_adjacent_triangle(i, p0, p1, p, adj);
-	int i1 = get_adjacent_triangle(i, p1, p2, p, adj);
-	int i2 = get_adjacent_triangle(i, p2, p0, p, adj);
+	int i0 = adj[3*i + 2];
+	int i1 = adj[3*i + 0];
+	int i2 = adj[3*i + 1];
 
 	/*verifica si los triangulos son continuos al endpoint */
 	int ic0 = is_continuous(i0 ,endpoint, p);

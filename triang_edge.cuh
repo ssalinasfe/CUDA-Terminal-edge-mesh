@@ -7,7 +7,7 @@ __device__ int get_edge_index(int u, int v, int i, int *p);
 __device__ int same_edge(int u, int v, int w, int x);
 __device__ int is_max_max(int i, int j, int *p, int *max);
 __device__ int edge_belongs_to(int k, int l, int i, int *p);
-
+__device__ int get_shared_edge(int i, int u, int v, int *p);
 
 __global__ void label_longest_edges(int *cu_max, double *cu_r, int *cu_triangles, int tnumber);
 __global__ void label_frontier_edges(int *cu_max, int *cu_disconnect, int *cu_triangles, int *cu_adj, int enumber);

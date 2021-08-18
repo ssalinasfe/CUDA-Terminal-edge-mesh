@@ -1,3 +1,7 @@
+#include "consts.h"
+#include "triang_edge.cuh"
+#include "polygon.cuh"
+
 //Search a triangle asociated to a barrier-edge that contains vertex v
 //This doesnt use trivertex to find a triangle asociated to v, instead of, search in the list of the triangles one that containts v as frontier-edge, so the cost is o(n) per search
 //Input:  index vertex v, array of triangles, array of neigh, number of triangles, array that asociated each triangle to a vertex
@@ -19,7 +23,7 @@ __device__ int search_triangle_by_vertex_with_FrontierEdge(int v, int *triangles
 }
 
 //Given a triangle i, return the triangle adjacent to the triangle origen that containts the vertex v
-int search_prev_vertex_to_split(int i, int v, int origen, int *triangles, int *adj){
+__device__ int search_prev_vertex_to_split(int i, int v, int origen, int *triangles, int *adj){
 	int t0, t1,t2;
 	int a0, a1, a2;
 
@@ -53,7 +57,7 @@ int search_prev_vertex_to_split(int i, int v, int origen, int *triangles, int *a
 
 
 //Given a triangle i, return the triangle no adjacent to the triangle origen that containts the vertex v
-int search_next_vertex_to_split(int i, int v, int origen, int *triangles, int *adj){
+__device__ int search_next_vertex_to_split(int i, int v, int origen, int *triangles, int *adj){
 	int t0, t1,t2;
 	int a0, a1, a2;
 
@@ -92,14 +96,16 @@ int search_next_vertex_to_split(int i, int v, int origen, int *triangles, int *a
 }
 
 // advance i triangles arround vertex endpoint
-__device__ int advance_i_adjacents_triangles_share_endpoint(int adv, int t, int origen, int endpoint, int *p, int *adj){
+__device__ int advance_i_adjacents_triangles_share_endpoint(int adv, int t, int &origen, int endpoint, int *p, int *adj){
 	int aux;
 	while(adv > 0){
+	//	printf("%d %d\n", t, origen) ;
 		aux = t;
         t = get_adjacent_triangle_share_endpoint(t, origen, endpoint, p, adj);
         origen = aux;
 		adv--;
 	}
+	//printf("%d %d\n", t, origen) ;
 	return t;
 }
 
@@ -114,134 +120,90 @@ __device__ int get_edge(int i, int u, int v, int *p){
 	}
 	//fprintf(stderr, "ERROR get_edge: No se encontro el edge %d - %d del triangulo %d", u,v,i);
 	//exit(0);
-	return EXIT_FAILURE;
+	return -1;
 
 }
 
-__device__ int optimice2_middle_edge_no_memory(int *t_original, int v_be, int *triangles, int *adj){
+__device__ int optimice_middle_edge_no_memory(int *t_original, int v_be, int *triangles, int *adj){
     
     int aux, origen,adv;
+
     int t_incident;
     int t = *t_original;
-    
-    origen = -1;
-    adv = 0; //number of triangles to advance around v_be
-    t_incident = t; 
-    int t_next, t_prev;
+    t_incident = t;
+    adv = 0;
+    origen = -1; 
+    int t_next = -1, t_prev;
     while (1)
     {
-        //advance once triangle
+     //   debug_print("%d %d %d\n", *t_original, t, origen) ;
+        adv++;
         aux = t;
         t = get_adjacent_triangle_share_endpoint(t, origen, v_be, triangles, adj);
         origen = aux;
-        
-        //if threre is not more triangle to see
-        if( t < 0) break;
-        adv++;
+        if (t<0)
+            break;
     }
+    //debug_print("%d %d %d\n", *t_original, t, origen );
     //print_poly(t_incident, i);
+    if(adv == 1){
+        *t_original = t_incident;
+        //return search_prev_vertex_to_split(t_incident[0], v_be, -1, triangles, adj);
+        for(int j = 0; j < 3; j++){
+            if(triangles[3*t_incident + j] == v_be)
+                return triangles[3*t_incident + (j+1)%3];
+        }
+    }
     if(adv%2 == 0){ //if the triangles surrounding the BET are even 
-        adv = floor(adv+1/2);
-        t_prev = advance_i_adjacents_triangles_share_endpoint(adv,t_incident, -1, v_be, triangles, adj);
+        adv = adv/2 - 1;
+        origen = -1;
+        t_prev = advance_i_adjacents_triangles_share_endpoint(adv,t_incident, origen, v_be, triangles, adj);
         *t_original = t_prev;
         //Choose the edge in common with the two middle triangles   
-        t_next = get_adjacent_triangle_share_endpoint(t, t_prev, v_be, triangles, adj);
+        t_next = get_adjacent_triangle_share_endpoint(t_prev, origen, v_be, triangles, adj);
+   //     debug_print("search_prev adv %d t_next %d v_be %d t_prev %d \n", adv, t_next, v_be, t_prev);    
         return search_prev_vertex_to_split(t_next, v_be, t_prev, triangles, adj);
-    }else
-    {   
-        //if the triangles surrounding the BET are even 
+    }else{   
+        //if the triangles surrounding the BET are odd, edges are even
         //Choose any edge of the triangle in the middle; prov is choose due to this always exists
-        adv = floor(adv/2);
-        t_prev = advance_i_adjacents_triangles_share_endpoint(adv,t_incident, -1, v_be, triangles, adj);
-        *t_original = t_prev;
+        adv = adv/2;
+        t_next = advance_i_adjacents_triangles_share_endpoint(adv,t_incident, t_prev, v_be, triangles, adj);
+        *t_original = t_next;
+        //t_next = get_adjacent_triangle_share_endpoint(t_prev, -1, v_be, triangles, adj);
+ //       debug_print("search_next adv %d t_next %d v_be %d t_prev %d \n", adv, t_next, v_be, t_prev);
         return search_next_vertex_to_split(t_next, v_be, t_prev, triangles, adj);
     }   
 }
 
-//Split polygons with BET in two polygons and save again in cu_mesh, if a polygon hasn't bet, this is relloc in 
-//INPUT
-//num_poly: Número de poligonos en ind_poly
-//ind_poly: index first element of the poly in ind_poly
-//cu_triangles, cu_adj, cu_r: Elements of Delaunay triangulation
-//range: atomic variable to save elements in mesh
-//num_be: total number of bet in new mesh
-//OUTPUT
-//num_be: number of bet in new mesh
-//cu_mesh: new polygon mesh
-__global__ void polygon_reparation(int num_poly, int *cu_ind_poly, int *cu_triangles, int *cu_adj, double *cu_r, int *cu_mesh, int *range_mesh, int* range_indoly, int *num_be){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int i_mesh, i_mesh2, bet, int length_poly,  int poly[100]],k;
-	if(i<num_poly){
-
-		length_poly = mesh[cu_ind_poly[i]];
-		for(k = 0; k < length_poly;k++){
-			poly[k] = mesh[cu_ind_poly[i] + 1 + k];
-		}
-
-		bet = has_bet(poly, length_poly);
-		if(bet){//if has bet
-			length_poly = split_poly(poly, length_poly, triangles, adj, r);
-		}else{// if no bet, then just preprare the polygon to save in array
-			for(k = 0; k < length_poly + 1;k++)
-				poly[k + 1] = poly[k];
-			poly[0] = length_poly;
-		}
-	
-		
-		0 -> 10 + 0	
-		range = 10
-		//save polygons in mesh
-		i_mesh = atomicAdd(range_mesh, length_poly); //imesh indice inicial a guardar
-
-		for(int k = 0; k < poly[0]; k++)
-            cu_mesh[i_mesh + 1 + k] = poly[k+1]; 
-		cu_mesh[i_mesh] = poly[0];	
-
-		i_ind_poly = atomicAdd(range_poly, +1); //le suma 1 a range_poly y devuelve el valor anterior a este en la suma;
-			cu_ind_poly[i_ind_poly] = i_mesh;
-		//hacer dos arreglos globales
-		if(bet){
-			cu_mes
-		h[i_mesh + length_poly + 1] = poly[length_poly + 1];
-			for(int k = 0; k < poly[length_poly + 1]; k++) 
-				cu_mesh[i_mesh + length_poly  + 2 + k] = poly[length_poly + 2 + k];
-			i_mesh2 = i_mesh + length_poly +1;
-
-			
-			i_ind_poly = atomicAdd(range_poly, +1); //le suma 1 a range_poly y devuelve el valor anterior a este en la suma;
-			cu_ind_poly[i_ind_poly] = i_mesh2;
-		}
-	}	
+__device__ int has_bet(int *poly, int length_poly){
+    int x, y,i;
+    for (i = 0; i < length_poly; i++)
+    {
+        x = i % length_poly;
+        y = (i+2) % length_poly;
+        if (poly[x] == poly[y])
+            return 1;
+    }
+    return 0;
 }
 
-//Split a polygon in two and save it in the same array
-__device__ split_poly(int * poly, int length_poly, int * triangles, int * adj, double *r){
-
-
-	int v_be, v_other, t1,t2, ipoly, ipoly_after;
-	v_be = get_vertex_BarrierEdge(poly, length_poly);
-	t1 = search_triangle_by_vertex_with_FrontierEdge_from_trivertex(v_be, triangles, adj, tnumber, trivertex);
-	v_other = optimice2_middle_edge(&t1, v_be, triangles, adj);
-	t2 = get_adjacent_triangle(t1, v_other, v_be, triangles, adj);
-
-	adj[3*t1 + get_shared_edge(t1, v_be, v_other, triangles)] = NO_ADJ;
-	adj[3*t2 + get_shared_edge(t2, v_be, v_other, triangles)] = NO_ADJ;
-
-	ipoly = 0;
-
-	ipoly_after = generate_polygon_from_BET_removal(t1, poly,triangles,adj,r,ipoly+1); 
-	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
-	ipoly = ipoly_after;
-	
-	ipoly_after = generate_polygon_from_BET_removal(t2, poly,triangles,adj,r,ipoly+1); 
-	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
-	ipoly = ipoly_after; //lenght of element in poly;
-
-	return ipoly;
+__device__ int get_vertex_BarrierEdge(int *poly, int length_poly){
+    int x, y,i;
+    for (i = 0; i < length_poly; i++)
+    {
+        x = i % length_poly;
+        y = (i+2) % length_poly;
+        if (poly[x] == poly[y])
+            return poly[(i+1) %length_poly];
+    }
+    //fprintf(stderr,"num_BE %d\n", count_BarrierEdges(poly, length_poly));
+    //fprintf(stderr,"%s:%d:%s(): No se encontro vertice BarrierEdge\n",__FILE__,  __LINE__, __func__);
+    //exit(0);
+    return -1;
 }
 
 
-int generate_polygon_from_BET_removal(int i, int * poly, int * triangles, int * adj, double *r, int ind_poly){
+__device__ int generate_polygon_from_BET_removal(int i, int * poly, int * triangles, int * adj, double *r, int ind_poly){
 	//    int ind_poly = 0;
 		
 		int initial_point = 0;
@@ -331,7 +293,7 @@ int generate_polygon_from_BET_removal(int i, int * poly, int * triangles, int * 
 			num_FrontierEdges = count_FrontierEdges(k, adj);
 			//debug_print("FE %d | origen %d t %d | Triangles %d %d %d | ADJ  %d %d %d\n", num_FrontierEdges, origen, k, triangles[3*k + 0], triangles[3*k + 1], triangles[3*k + 2], adj[3*k + 0], adj[3*k + 1], adj[3*k + 2]);
 			if(origen == -2)
-				exit(0);
+				return -3;
 			if (num_FrontierEdges == 2 && continuous != -1) {
 				/* ///////////////////si tiene 2 frontier edge se agregan a poly //////////////////////////////////// */
 	
@@ -463,3 +425,94 @@ int generate_polygon_from_BET_removal(int i, int * poly, int * triangles, int * 
 		
 		return ind_poly;
 	}
+
+
+
+//Split a polygon in two and save it in the same array
+__device__ int split_poly(int * poly, int length_poly, int * triangles, int * adj, double *r,  int &pos2_poly, int tnumber){
+
+	int v_be, v_other, t1,t2, ipoly, ipoly_after;
+
+
+	v_be = get_vertex_BarrierEdge(poly, length_poly);
+	t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, triangles, adj, tnumber);
+	v_other = optimice_middle_edge_no_memory(&t1, v_be, triangles, adj);
+	t2 = get_adjacent_triangle(t1, v_other, v_be, triangles, adj);
+
+	adj[3*t1 + get_shared_edge(t1, v_be, v_other, triangles)] = NO_ADJ;
+	adj[3*t2 + get_shared_edge(t2, v_be, v_other, triangles)] = NO_ADJ;
+
+	ipoly = 0;
+
+	ipoly_after = generate_polygon_from_BET_removal(t1, poly,triangles,adj,r,ipoly+1); 
+	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
+	ipoly = ipoly_after;
+	
+	ipoly_after = generate_polygon_from_BET_removal(t2, poly,triangles,adj,r,ipoly+1); 
+	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
+	ipoly = ipoly_after; //lenght of element in poly;
+
+	return ipoly;
+}
+
+//Split polygons with BET in two polygons and save again in cu_mesh, if a polygon hasn't bet, this is relloc in 
+//INPUT
+//cu_mesh: polygon mesh with bet
+//num_poly: Número de poligonos en ind_poly
+//ind_poly: index first element of the poly in cu_mesh
+//cu_triangles, cu_adj, cu_r: Elements of Delaunay triangulation
+//range_mesh: atomic variable to save elements in mesh
+//range_ind_poly: atomic variable to save elements in ind_poly
+//is_there_bet: atomic variable to check if there are bet or not
+//OUTPUT
+//cu_mesh_aux: new polygon mesh
+//is_there_bet: atomic variable to check if there are bet or not
+__global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *range_mesh, int* range_indoly, int *is_there_bet){
+
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;
+	int bet, length_poly, poly[100], k, pos2_poly;	
+	if(i < num_poly){
+		//save polygon in temporal array
+		length_poly = cu_mesh[cu_ind_poly[i]];
+		for(k = 0; k < length_poly;k++){
+			poly[k] = cu_mesh[cu_ind_poly[i] + 1 + k];
+		}
+
+		//check if polygon has bet
+		bet = has_bet(poly, length_poly);
+		if(bet){//if has bet
+			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, pos2_poly, tnumber);
+		}else{// if no bet, then just preprare the polygon to save in array
+			for(k = 0; k < length_poly + 1; k++)
+				poly[k + 1] = poly[k];
+			poly[0] = length_poly;
+		}
+
+		
+
+		/*
+		//save polygons in mesh
+		i_mesh = atomicAdd(range_mesh, length_poly); //imesh indice inicial a guardar
+		for(int k = 0; k < poly[0]; k++)
+            cu_mesh[i_mesh + 1 + k] = poly[k+1]; 
+		cu_mesh[i_mesh] = poly[0];	
+
+		i_ind_poly = atomicAdd(range_poly, +1); //le suma 1 a range_poly y devuelve el valor anterior a este en la suma;
+			cu_ind_poly[i_ind_poly] = i_mesh;
+		//hacer dos arreglos globales
+		if(bet){
+			cu_mes
+		h[i_mesh + length_poly + 1] = poly[length_poly + 1];
+			for(int k = 0; k < poly[length_poly + 1]; k++) 
+				cu_mesh[i_mesh + length_poly  + 2 + k] = poly[length_poly + 2 + k];
+			i_mesh2 = i_mesh + length_poly +1;
+
+			
+			i_ind_poly = atomicAdd(range_poly, +1); //le suma 1 a range_poly y devuelve el valor anterior a este en la suma;
+			cu_ind_poly[i_ind_poly] = i_mesh2;
+		}*/
+	}	
+}
+
+

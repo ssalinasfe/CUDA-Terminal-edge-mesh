@@ -287,6 +287,21 @@ __device__ int max_edge_index(int i, double *r, int *p){
                      || same_edge(k, l, p[3*i + 2], p[3*i + 0]);
  }
 
+
+
+/* Given one triangle i, return the edge index that containts u and v*/
+__device__ int get_shared_edge(int i, int u, int v, int *p){
+	int j, ind1,ind2;
+	for(j = 0; j < 3; j++){
+		ind1 = 3*i + j;
+		ind2 = 3*i + (j+1)%3;
+		//debug_print("%d %d %d %d %d\n", ind1, ind2, ind3, (p[ind1] == u || p[ind2] == u), (p[ind1] == v || p[ind2] == v));
+		if( (p[ind1] == u || p[ind2] == u) && (p[ind1] == v || p[ind2] == v))
+			return (j+2)%3;
+	}
+	return 0;
+}
+
 __global__ void label_longest_edges(int *cu_max, double *cu_r, int *cu_triangles, int tnumber)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -344,3 +359,4 @@ __global__ void initialize_memory(int *cu_seed, int* cu_disconnect, int tnumber)
        cu_disconnect[i] = FALSE;
     }
 }
+

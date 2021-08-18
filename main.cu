@@ -10,16 +10,15 @@
 #include <algorithm>    // std::min
 
 
-
-#include "io.h"
 #include "consts.h"
 
 
 //cuda
 #include "io.cuh"
-//#include "triangle.cuh"
+
 #include "triang_edge.cuh"
 #include "polygon.cuh"
+#include "BET_elimination.cuh"
 
 
 #ifdef DEBUG
@@ -33,8 +32,8 @@
 #define debug_msg(fmt) do { if (DEBUG_TEST) fprintf(stderr, "%s:%d:%s(): " fmt, __FILE__,  __LINE__, __func__); } while (0)
 
 
-int main(int argc, char* argv[]){
-
+int main(int argc, char* argv[])
+{
 
     int nparam = 3;
     //char* params[] = {const_cast<char*> ("./detri2"), const_cast<char*> ("-z"), const_cast<char*> ("test.node")};
@@ -45,8 +44,7 @@ int main(int argc, char* argv[]){
     //char* ppath = const_cast<char*> ("test");
     //TMesh *Tr = new TMesh(nparam, params);    
 	auto tb_delaunay = std::chrono::high_resolution_clock::now();
-	TMesh *Tr = new TMesh(argc, argv);    
-	
+	TMesh *Tr = new TMesh(argc, argv);    	
 	auto te_delaunay = std::chrono::high_resolution_clock::now();
     //Tr->print();
     
