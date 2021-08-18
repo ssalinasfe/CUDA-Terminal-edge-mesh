@@ -69,9 +69,9 @@ __device__ int is_continuous(int i, int endpoint, int *p ){
 	Origen es el triangulo de donde se viene, -1 si se quiere que se pueda devolver a triangulo anterior.
 */
 __device__ int get_adjacent_triangle_share_endpoint(int i, int origen, int endpoint, int *p, int *adj){
-	int p0 = p[3*i + 0];
-	int p1 = p[3*i + 1];
-	int p2 = p[3*i + 2];
+	//int p0 = p[3*i + 0];
+	//int p1 = p[3*i + 1];
+	//int p2 = p[3*i + 2];
 	
 	/* consigue los triangulos adyacentes */
 	int i0 = adj[3*i + 2];
@@ -318,19 +318,24 @@ __device__ int generate_polygon(int * poly, int * triangles, int * adj, double *
 }
 
 
-__global__ void generate_mesh(int *cu_triangles, int *cu_adj, double *cu_r, int *cu_seed,
-                                 int *cu_mesh, int tnumber, int *range){
+__global__ void generate_mesh(int *cu_triangles, int *cu_adj, double *cu_r, int *cu_seed, int *cu_mesh, int tnumber, int *cu_i_mesh, int *cu_ind_poly, int* cu_i_ind_poly)
+{
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int i_mesh;
+    int i_mesh, i_ind_poly;
     if(i < tnumber && cu_seed[i]){
         int poly[100]; // CAMBIAR POR SHARE MEMORY
         
         int length_poly = generate_polygon(poly, cu_triangles, cu_adj, cu_r, i);
-        __syncthreads(); 
-        
-        i_mesh = atomicAdd(range, length_poly+1);
+
+        __syncthreads();
+
+        i_mesh = atomicAdd(cu_i_mesh, length_poly+1);
+        i_ind_poly = atomicAdd(cu_i_ind_poly, 1);
+
+        cu_ind_poly[i_ind_poly] = i_mesh;
         
         cu_mesh[i_mesh] = length_poly;
+
         i_mesh++;
         for(int k = 0; k <length_poly; k++){
             cu_mesh[i_mesh + k] = poly[k];

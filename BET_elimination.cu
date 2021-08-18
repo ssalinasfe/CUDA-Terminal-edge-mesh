@@ -489,7 +489,7 @@ __global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly,
 			poly[0] = length_poly;
 		}
 
-		
+					
 
 		/*
 		//save polygons in mesh

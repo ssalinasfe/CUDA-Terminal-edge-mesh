@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 	int *max;
 	int *mesh;
 	int *disconnect;
-
+	int *ind_poly;
 	
 	
     tnumber = Tr->tnumber;
@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
     adj =(int *)malloc(3*tnumber*sizeof(int));
     triangles = (int *)malloc(3*tnumber*sizeof(int));
 	mesh = (int *)malloc(3*tnumber*sizeof(int));
+	ind_poly = (int *)malloc(3*tnumber*sizeof(int));
 	
 
 	//Cuda functions
@@ -80,6 +81,7 @@ int main(int argc, char* argv[])
 	int *cu_max;
 	int *cu_disconnect;
 	int *cu_mesh;
+	int *cu_ind_poly;
 
 	// Allocate device memory.
 	cudaMalloc((void**) &cu_max, tnumber*sizeof(int));
@@ -89,9 +91,11 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_triangles, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_adj, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_mesh, 3*tnumber*sizeof(int));
-
+	cudaMalloc((void**) &cu_ind_poly, tnumber*sizeof(int));
 
 	/* Llamada a detr2 */
+	{
+
 
     int idx =0;
     //copiar arreglo de vertices
@@ -136,10 +140,9 @@ int main(int argc, char* argv[])
         idx++;
     }
 	delete Tr;
-
+	}
 
 		
-
     // Transfer arrays to device.
     cudaMemcpy(cu_r, r,                   2*tnumber*sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(cu_triangles, triangles,   3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
@@ -148,6 +151,7 @@ int main(int argc, char* argv[])
 	cudaMemcpy(cu_max, max,               tnumber*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(cu_disconnect, disconnect, 3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
 	cudaMemcpy(cu_mesh, mesh,             3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(cu_ind_poly, ind_poly,    tnumber*sizeof(int), cudaMemcpyHostToDevice);
 	
 	//se consigue el indice de la malla i_mesh
 	int i_mesh = 0;
@@ -155,6 +159,13 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_i_mesh, sizeof(int));
 	cudaMemcpy(cu_i_mesh, &i_mesh, 1*sizeof(int), cudaMemcpyHostToDevice);
 	
+	//se consigue el indice de ind_poly
+	int i_ind_poly = 0;
+	int *cu_i_ind_poly;
+	cudaMalloc((void**) &cu_i_ind_poly, sizeof(int));
+	cudaMemcpy(cu_i_ind_poly, &i_ind_poly, 1*sizeof(int), cudaMemcpyHostToDevice);
+	
+
 	int enumber = 3*tnumber;
 
 	//https://stackoverflow.com/questions/47822784/calculating-grid-and-block-dimensions-of-a-kernel
@@ -215,15 +226,16 @@ int main(int argc, char* argv[])
 
 
 	auto tb_travel = std::chrono::high_resolution_clock::now();
-	generate_mesh<<<numBlocks, numThreads>>>(cu_triangles, cu_adj, cu_r, cu_seed, cu_mesh, tnumber, cu_i_mesh);
+	generate_mesh<<<numBlocks, numThreads>>>(cu_triangles, cu_adj, cu_r, cu_seed, cu_mesh, tnumber, cu_i_mesh, cu_ind_poly, cu_i_ind_poly);
 	std::cout<<"terminado mesh generation"<<std::endl;
 	cudaDeviceSynchronize();
 	auto te_travel = std::chrono::high_resolution_clock::now();
 	auto t2 = std::chrono::high_resolution_clock::now();
 	cudaMemcpy(&i_mesh, cu_i_mesh,sizeof(int), cudaMemcpyDeviceToHost);
-//	std::cout<<"\ni_mesh = "<<i_mesh<<std::endl;
+	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
 
 	cudaMemcpy(mesh, cu_mesh,3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(seed, cu_seed,tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	
 	int num_region = 0;
@@ -236,7 +248,6 @@ int main(int argc, char* argv[])
 	
 	write_geomview(r, triangles, pnumber, tnumber, i_mesh, mesh, seed, num_region, 0);
 
-
 	std::cout << std::setprecision(3) << std::fixed;
     std::cout <<"pnumber tnumber num_reg tlabel talgorithm ttravel"<<std::endl;
 	std::cout<<pnumber<<" "<<tnumber<<" "<<num_region;
@@ -245,13 +256,32 @@ int main(int argc, char* argv[])
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
 
 
+  	//imprimir polginos
+	std::cout<<std::endl;
+	int length_poly;
+    i = 0;
+    while(i < i_mesh){
+        length_poly = mesh[i];
+        std::cout<<"("<<i<<") "<<length_poly<<": ";
+		i++;
+        for(j=0; j < length_poly;j++){
+            std::cout<< mesh[i]<<" ";
+            i++;
+        }
+        std::cout<<std::endl;
+    }
+
+	for(i = 0; i < i_ind_poly; i++)	
+		std::cout<< ind_poly[i]<<" ";
+	std::cout<<std::endl;
+	
 	free(r);
 	free(triangles);
 	free(adj);
 	free(seed );
 	free(mesh);
 	free(max);
-	
+	free(ind_poly);
 	cudaFree(cu_r);
 	cudaFree(cu_triangles);
 	cudaFree(cu_adj);
@@ -260,6 +290,7 @@ int main(int argc, char* argv[])
 	cudaFree(cu_max);
 	cudaFree(cu_i_mesh);
 	cudaFree(cu_disconnect);
+	cudaFree(cu_ind_poly);
 	return EXIT_SUCCESS;
 }
     
