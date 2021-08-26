@@ -447,6 +447,8 @@ __device__ int split_poly(int * poly, int length_poly, int * triangles, int * ad
 	ipoly_after = generate_polygon_from_BET_removal(t1, poly,triangles,adj,r,ipoly+1); 
 	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
 	ipoly = ipoly_after;
+
+	pos2_poly = ipoly;
 	
 	ipoly_after = generate_polygon_from_BET_removal(t2, poly,triangles,adj,r,ipoly+1); 
 	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
@@ -467,51 +469,46 @@ __device__ int split_poly(int * poly, int length_poly, int * triangles, int * ad
 //OUTPUT
 //cu_mesh_aux: new polygon mesh
 //is_there_bet: atomic variable to check if there are bet or not
-__global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *range_mesh, int* range_indoly, int *is_there_bet){
+__global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *cu_i_mesh, int* cu_i_ind_poly, int *is_there_bet){
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;
-	int bet, length_poly, poly[100], k, pos2_poly;	
+	int bet = 0, length_poly, poly[100], k, pos2_poly, i_mesh, i_ind_poly, aux;	
+	
 	if(i < num_poly){
+
 		//save polygon in temporal array
-		length_poly = cu_mesh[cu_ind_poly[i]];
-		for(k = 0; k < length_poly;k++){
-			poly[k] = cu_mesh[cu_ind_poly[i] + 1 + k];
+		i_ind_poly = cu_ind_poly[i];
+		length_poly = cu_mesh[i_ind_poly];
+		for(k = 0; k < length_poly; k++){
+			poly[k] = cu_mesh[i_ind_poly + 1 + k];
 		}
 
-		//check if polygon has bet
 		bet = has_bet(poly, length_poly);
+		bet = 0;
 		if(bet){//if has bet
 			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, pos2_poly, tnumber);
+
+			i_mesh = atomicAdd(cu_i_mesh, length_poly); //imesh indice inicial a guardar
+			i_ind_poly = atomicAdd(cu_i_ind_poly, 2);
+			for(int k = 0; k < length_poly; k++)
+				cu_mesh_aux[i_mesh + k] = poly[k];
+			cu_ind_poly_aux[i_ind_poly - 1] = i_mesh;
+			cu_ind_poly_aux[i_ind_poly] = i_mesh + poly[0] + 1;
 		}else{// if no bet, then just preprare the polygon to save in array
-			for(k = 0; k < length_poly + 1; k++)
-				poly[k + 1] = poly[k];
+			for(k = length_poly; k > 0 ; k--)
+				poly[k] = poly[k-1];
 			poly[0] = length_poly;
+
+			i_mesh = atomicAdd(cu_i_mesh, length_poly+1); //imesh indice inicial a guardar
+			i_ind_poly = atomicAdd(cu_i_ind_poly, 1);
+
+			for(int k = 0; k < length_poly + 1; k++)
+				cu_mesh_aux[i_mesh + k] = poly[k];
+			cu_ind_poly_aux[i_ind_poly] = i_mesh;
 		}
 
-					
-
-		/*
-		//save polygons in mesh
-		i_mesh = atomicAdd(range_mesh, length_poly); //imesh indice inicial a guardar
-		for(int k = 0; k < poly[0]; k++)
-            cu_mesh[i_mesh + 1 + k] = poly[k+1]; 
-		cu_mesh[i_mesh] = poly[0];	
-
-		i_ind_poly = atomicAdd(range_poly, +1); //le suma 1 a range_poly y devuelve el valor anterior a este en la suma;
-			cu_ind_poly[i_ind_poly] = i_mesh;
-		//hacer dos arreglos globales
-		if(bet){
-			cu_mes
-		h[i_mesh + length_poly + 1] = poly[length_poly + 1];
-			for(int k = 0; k < poly[length_poly + 1]; k++) 
-				cu_mesh[i_mesh + length_poly  + 2 + k] = poly[length_poly + 2 + k];
-			i_mesh2 = i_mesh + length_poly +1;
-
-			
-			i_ind_poly = atomicAdd(range_poly, +1); //le suma 1 a range_poly y devuelve el valor anterior a este en la suma;
-			cu_ind_poly[i_ind_poly] = i_mesh2;
-		}*/
+		atomicAdd(is_there_bet, bet);
 	}	
 }
 

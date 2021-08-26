@@ -327,6 +327,7 @@ __global__ void get_seeds(int *cu_max, int *cu_triangles, int *cu_adj, int *cu_s
                     break;
                 }
             }
+            //esto se puede optimizar, mezclaro con la operación de arriba
             if (cu_adj[3*i +j] == -1 && cu_max[i] == (j+1)%3){ //si es terminal-boder edge
                 cu_seed[i] = TRUE;
                 break;

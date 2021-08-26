@@ -23,7 +23,7 @@ void write_geomview(double *r, int *triangles, int pnumber, int tnumber, int i_m
     char cmd[1024] = "\0";
     strcat(cmd, filespathoutput);
     //strcat(cmd, ppath);
-    strcat(cmd,".off");
+    strcat(cmd,"autodata.off");
     FILE *fptr;
     fptr = fopen(cmd, "w");
     if(fptr == NULL){

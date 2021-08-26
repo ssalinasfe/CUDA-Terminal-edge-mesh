@@ -32,6 +32,7 @@
 #define debug_msg(fmt) do { if (DEBUG_TEST) fprintf(stderr, "%s:%d:%s(): " fmt, __FILE__,  __LINE__, __func__); } while (0)
 
 
+
 int main(int argc, char* argv[])
 {
 
@@ -48,6 +49,7 @@ int main(int argc, char* argv[])
 	auto te_delaunay = std::chrono::high_resolution_clock::now();
     //Tr->print();
     
+	int length_poly;
 	int tnumber, pnumber, i,j;
 	double *r;
 	int *triangles;
@@ -81,7 +83,9 @@ int main(int argc, char* argv[])
 	int *cu_max;
 	int *cu_disconnect;
 	int *cu_mesh;
+	int *cu_mesh_aux;
 	int *cu_ind_poly;
+	int *cu_ind_poly_aux;
 
 	// Allocate device memory.
 	cudaMalloc((void**) &cu_max, tnumber*sizeof(int));
@@ -91,7 +95,9 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_triangles, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_adj, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_mesh, 3*tnumber*sizeof(int));
+	cudaMalloc((void**) &cu_mesh_aux, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_ind_poly, tnumber*sizeof(int));
+	cudaMalloc((void**) &cu_ind_poly_aux, tnumber*sizeof(int));
 
 	/* Llamada a detr2 */
 	{
@@ -165,6 +171,10 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_i_ind_poly, sizeof(int));
 	cudaMemcpy(cu_i_ind_poly, &i_ind_poly, 1*sizeof(int), cudaMemcpyHostToDevice);
 	
+	int is_there_bet = 1;
+	int *cu_is_there_bet;
+	cudaMalloc((void**) &cu_is_there_bet, sizeof(int));
+	cudaMemcpy(cu_is_there_bet, &is_there_bet, 1*sizeof(int), cudaMemcpyHostToDevice);
 
 	int enumber = 3*tnumber;
 
@@ -231,34 +241,100 @@ int main(int argc, char* argv[])
 	cudaDeviceSynchronize();
 	auto te_travel = std::chrono::high_resolution_clock::now();
 	auto t2 = std::chrono::high_resolution_clock::now();
-	cudaMemcpy(&i_mesh, cu_i_mesh,sizeof(int), cudaMemcpyDeviceToHost);
+	
+	cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
 
-	cudaMemcpy(mesh, cu_mesh,3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(seed, cu_seed,tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	
-	int num_region = 0;
-	for (i = 0; i < tnumber; i++)
-	{	
-		if(seed[i] == TRUE){
-			num_region++;
+	cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(seed, cu_seed, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+  /*	
+	  //imprimir polginos
+	for(i = 0; i < i_ind_poly; i++)	
+		std::cout<< ind_poly[i]<<" ";
+	std::cout<<std::endl;
+	for(i = 0; i < i_mesh; i++)	
+		std::cout<< mesh[i]<<" ";
+	std::cout<<std::endl;
+
+
+	int k, poly[100];
+	for(i = 0; i < i_ind_poly; i++){
+		std::cout<<"("<<ind_poly[i]<<") "<<mesh[ind_poly[i]]<<": ";
+		for(k = 0; k < mesh[ind_poly[i]]; k++){
+			std::cout<< mesh[ind_poly[i] + 1 + k]<<" ";
 		}
+		std::cout<<std::endl;
+	}
+*/	
+
+	int num_poly;
+	//std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
+	int counter = 0;
+	while(is_there_bet)
+	{
+		cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(cu_ind_poly_aux, cu_ind_poly, sizeof(int), cudaMemcpyDeviceToDevice);
+		
+
+		num_poly = i_ind_poly;
+		
+		i_mesh = 0;
+		i_ind_poly = 0;
+		is_there_bet = 0;
+
+		cudaMemcpy(cu_i_mesh, &i_mesh, 1*sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(cu_i_ind_poly, &i_ind_poly, 1*sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(cu_is_there_bet, &is_there_bet, 1*sizeof(int), cudaMemcpyHostToDevice);
+
+		if(counter%2 == 0)
+			polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
+		else
+			polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
+
+		counter++;
+		cudaDeviceSynchronize();
+
+		cudaMemcpy(&is_there_bet, cu_is_there_bet, 1*sizeof(int), cudaMemcpyDeviceToHost);	
+		std::cout<<"has_bet? "<<is_there_bet<<std::endl;	
 	}
 	
-	write_geomview(r, triangles, pnumber, tnumber, i_mesh, mesh, seed, num_region, 0);
+
+	if(counter%2 == 0){
+		cudaMemcpy(mesh, cu_mesh_aux, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(ind_poly, cu_ind_poly_aux, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+	}else{
+		cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+	}
+
+	cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost);
+	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
+
+	write_geomview(r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
 
 	std::cout << std::setprecision(3) << std::fixed;
     std::cout <<"pnumber tnumber num_reg tlabel talgorithm ttravel"<<std::endl;
-	std::cout<<pnumber<<" "<<tnumber<<" "<<num_region;
+	std::cout<<pnumber<<" "<<tnumber<<" "<<i_ind_poly;
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label - tb_label).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1 ).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
 
 
   	//imprimir polginos
-	std::cout<<std::endl;
-	int length_poly;
+	std::cout<<"\n num poly: "<<i_ind_poly<<", i_mesh: "<<i_mesh<<std::endl;
+
+	int k;
+	for(i = 0; i < i_ind_poly; i++){
+		std::cout<<"("<<ind_poly[i]<<") "<<mesh[ind_poly[i]]<<": ";
+		for(k = 0; k < mesh[ind_poly[i]]; k++){
+			std::cout<< mesh[ind_poly[i] + 1 + k]<<" ";
+		}
+		std::cout<<std::endl;
+	}
+
+	/*
     i = 0;
     while(i < i_mesh){
         length_poly = mesh[i];
@@ -266,11 +342,11 @@ int main(int argc, char* argv[])
 		i++;
         for(j=0; j < length_poly;j++){
             std::cout<< mesh[i]<<" ";
-            i++;
+			i++;
         }
         std::cout<<std::endl;
     }
-
+	*/
 	for(i = 0; i < i_ind_poly; i++)	
 		std::cout<< ind_poly[i]<<" ";
 	std::cout<<std::endl;
@@ -282,6 +358,7 @@ int main(int argc, char* argv[])
 	free(mesh);
 	free(max);
 	free(ind_poly);
+
 	cudaFree(cu_r);
 	cudaFree(cu_triangles);
 	cudaFree(cu_adj);
