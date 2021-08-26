@@ -452,9 +452,9 @@ __device__ int split_poly(int * poly, int length_poly, int * triangles, int * ad
 	
 	ipoly_after = generate_polygon_from_BET_removal(t2, poly,triangles,adj,r,ipoly+1); 
 	poly[ipoly] = ipoly_after - ipoly - 1; // calculate lenght poly and save it before their vertex
-	ipoly = ipoly_after; //lenght of element in poly;
+	//ipoly = ipoly_after + ipoly ; //lenght of element in poly;
 
-	return ipoly;
+	return ipoly_after;
 }
 
 //Split polygons with BET in two polygons and save again in cu_mesh, if a polygon hasn't bet, this is relloc in 
@@ -485,10 +485,9 @@ __global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly,
 		}
 
 		bet = has_bet(poly, length_poly);
-		bet = 0;
+		//bet = 0;
 		if(bet){//if has bet
 			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, pos2_poly, tnumber);
-
 			i_mesh = atomicAdd(cu_i_mesh, length_poly); //imesh indice inicial a guardar
 			i_ind_poly = atomicAdd(cu_i_ind_poly, 2);
 			for(int k = 0; k < length_poly; k++)

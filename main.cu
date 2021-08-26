@@ -272,11 +272,10 @@ int main(int argc, char* argv[])
 	int num_poly;
 	//std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
 	int counter = 0;
+	//cudaMemcpy(cu_ind_poly_aux, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToDevice);
 	while(is_there_bet)
 	{
 		cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
-		cudaMemcpy(cu_ind_poly_aux, cu_ind_poly, sizeof(int), cudaMemcpyDeviceToDevice);
-		
 
 		num_poly = i_ind_poly;
 		
