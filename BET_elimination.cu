@@ -1,6 +1,7 @@
 #include "consts.h"
 #include "triang_edge.cuh"
 #include "polygon.cuh"
+#include <stdio.h>
 
 //Search a triangle asociated to a barrier-edge that contains vertex v
 //This doesnt use trivertex to find a triangle asociated to v, instead of, search in the list of the triangles one that containts v as frontier-edge, so the cost is o(n) per search
@@ -473,27 +474,43 @@ __global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly,
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;
-	int bet = 0, length_poly, poly[100], k, pos2_poly, i_mesh, i_ind_poly, aux;	
+	int bet = 0, length_poly, poly[100], k, pos2_poly, i_mesh, i_ind_poly;	
 	
 	if(i < num_poly){
 
 		//save polygon in temporal array
+		
 		i_ind_poly = cu_ind_poly[i];
 		length_poly = cu_mesh[i_ind_poly];
+		
 		for(k = 0; k < length_poly; k++){
 			poly[k] = cu_mesh[i_ind_poly + 1 + k];
+		
 		}
-
 		bet = has_bet(poly, length_poly);
 		//bet = 0;
 		if(bet){//if has bet
+			//printf("Poly to split %d: ", length_poly);
+			for(k = 0; k < length_poly; k++){
+				poly[k] = cu_mesh[i_ind_poly + 1 + k];
+			//	printf("%d ", poly[k]);
+			}
+			//printf("\n");
+
 			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, pos2_poly, tnumber);
 			i_mesh = atomicAdd(cu_i_mesh, length_poly); //imesh indice inicial a guardar
 			i_ind_poly = atomicAdd(cu_i_ind_poly, 2);
-			for(int k = 0; k < length_poly; k++)
+			for(k = 0; k < length_poly; k++)
 				cu_mesh_aux[i_mesh + k] = poly[k];
-			cu_ind_poly_aux[i_ind_poly - 1] = i_mesh;
-			cu_ind_poly_aux[i_ind_poly] = i_mesh + poly[0] + 1;
+			
+			//printf("resultado %d: ", length_poly);
+			//for(k = 0; k < length_poly; k++){
+			//	printf("%d ", poly[k]);
+			//}
+			//printf("\n");
+			cu_ind_poly_aux[i_ind_poly] = i_mesh;
+			cu_ind_poly_aux[i_ind_poly+1] = i_mesh + poly[0] + 1;
+			//printf("i_mesh_1: %d - i_ind_poly1: %d | i_mesh2: %d - i_ind_poly2: %d\n",i_mesh, i_ind_poly - 1, i_mesh + poly[0] + 1, i_ind_poly);
 		}else{// if no bet, then just preprare the polygon to save in array
 			for(k = length_poly; k > 0 ; k--)
 				poly[k] = poly[k-1];

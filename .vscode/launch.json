@@ -8,7 +8,9 @@
             "name": "CUDA C++: Launch",
             "type": "cuda-gdb",
             "request": "launch",
-            "program": ""
+            "program": "${workspaceFolder}/build/DelaunayPolyGenerator",
+            "args": "autodata.node"
+            ]
         }
     ]
 }
