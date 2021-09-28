@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
 	std::cout<<"terminado mesh generation"<<std::endl;
 	cudaDeviceSynchronize();
 	auto te_travel = std::chrono::high_resolution_clock::now();
-	auto t2 = std::chrono::high_resolution_clock::now();
+	
 	
 	cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
@@ -273,6 +273,7 @@ int main(int argc, char* argv[])
 	//std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
 	int counter = 0;
 	//cudaMemcpy(cu_ind_poly_aux, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToDevice);
+	auto tb_reparation = std::chrono::high_resolution_clock::now();
 	while(is_there_bet)
 	{
 		cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
@@ -301,7 +302,8 @@ int main(int argc, char* argv[])
 		cudaMemcpy(&is_there_bet, cu_is_there_bet, 1*sizeof(int), cudaMemcpyDeviceToHost);	
 		std::cout<<"has_bet? "<<is_there_bet<<", counter: "<<counter<<std::endl;	
 	}
-	
+	auto te_reparation = std::chrono::high_resolution_clock::now();
+	auto t2 = std::chrono::high_resolution_clock::now();
 
 	if(counter%2 != 0){
 		std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
@@ -319,16 +321,17 @@ int main(int argc, char* argv[])
 	write_geomview(r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
 
 	std::cout << std::setprecision(3) << std::fixed;
-    std::cout <<"pnumber tnumber num_reg tlabel talgorithm ttravel"<<std::endl;
+    std::cout <<"pnumber tnumber num_reg talgorithm tlabel  ttravel ttreparation"<<std::endl;
 	std::cout<<pnumber<<" "<<tnumber<<" "<<i_ind_poly;
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label - tb_label).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1 ).count();
+	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label - tb_label).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
+	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_reparation - tb_reparation ).count();
 
-
+/*
   	//imprimir polginos
 	std::cout<<"\n num poly: "<<i_ind_poly<<", i_mesh: "<<i_mesh<<std::endl;
-/*
+
 	int k;
 	for(i = 0; i < i_ind_poly; i++){
 		std::cout<<"("<<ind_poly[i]<<") "<<mesh[ind_poly[i]]<<": ";
