@@ -602,3 +602,86 @@ __global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly
 		atomicAdd(is_there_bet, bet);
 	}	
 }
+
+
+/*
+//Split polygons with BET in two polygons and save again in cu_mesh, if a polygon hasn't bet, this is relloc in 
+//INPUT
+//cu_mesh: polygon mesh with bet
+//num_poly: Número de poligonos en ind_poly
+//ind_poly: index first element of the poly in cu_mesh
+//cu_triangles, cu_adj, cu_r: Elements of Delaunay triangulation
+//range_mesh: atomic variable to save elements in mesh
+//range_ind_poly: atomic variable to save elements in ind_poly
+//is_there_bet: atomic variable to check if there are bet or not
+//OUTPUT
+//cu_mesh_aux: new polygon mesh
+//is_there_bet: atomic variable to check if there are bet or not
+__global__ void polygon_reparation3(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int* cu_seed, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *cu_i_mesh, int* cu_i_ind_poly, int *is_there_bet){
+
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;
+	int bet = 0, length_poly, poly[100], k, pos2_poly, i_mesh, i_ind_poly;	
+	int seeds[20], s = 0;
+	int t1, v_other, t2, v_be;
+	if(i < num_poly){
+
+		//save polygon in temporal array
+		i_ind_poly = cu_ind_poly[i];
+		length_poly = cu_mesh[i_ind_poly];
+		
+		for(k = 0; k < length_poly; k++){
+			poly[k] = cu_mesh[i_ind_poly + 1 + k];
+		}
+
+		int x, y;
+		for (k = 0; k < length_poly; k++)
+		{
+			x = k % length_poly;
+			y = (k+2) % length_poly;
+			if (poly[x] == poly[y]){
+
+				v_be = poly[(k+1) %length_poly];
+				t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, cu_triangles, cu_adj, tnumber);
+				v_other = optimice_middle_edge_no_memory(&t1, v_be, cu_triangles, cu_adj);
+				t2 = get_adjacent_triangle(t1, v_other, v_be, cu_triangles, cu_adj);
+
+				cu_adj[3*t1 + get_shared_edge(t1, v_be, v_other, cu_triangles)] = NO_ADJ;
+				cu_adj[3*t2 + get_shared_edge(t2, v_be, v_other, cu_triangles)] = NO_ADJ;	
+
+				seeds[]
+
+			}
+				
+		}
+
+		if(bet){//if has bet
+			for(k = 0; k < length_poly; k++){
+				poly[k] = cu_mesh[i_ind_poly + 1 + k];
+			}
+			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, pos2_poly, tnumber);
+			i_mesh = atomicAdd(cu_i_mesh, length_poly); //imesh indice inicial a guardar
+			i_ind_poly = atomicAdd(cu_i_ind_poly, 2);
+			for(k = 0; k < length_poly; k++)
+				cu_mesh_aux[i_mesh + k] = poly[k];
+			
+			cu_ind_poly_aux[i_ind_poly] = i_mesh;
+			cu_ind_poly_aux[i_ind_poly+1] = i_mesh + poly[0] + 1;
+			
+		}else{// if no bet, then just preprare the polygon to save in array
+			for(k = length_poly; k > 0 ; k--)
+				poly[k] = poly[k-1];
+			poly[0] = length_poly;
+
+			i_mesh = atomicAdd(cu_i_mesh, length_poly+1); //imesh indice inicial a guardar
+			i_ind_poly = atomicAdd(cu_i_ind_poly, 1);
+
+			for(int k = 0; k < length_poly + 1; k++)
+				cu_mesh_aux[i_mesh + k] = poly[k];
+			cu_ind_poly_aux[i_ind_poly] = i_mesh;
+		}
+
+		atomicAdd(is_there_bet, bet);
+	}	
+}
+*/

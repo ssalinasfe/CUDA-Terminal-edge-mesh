@@ -1,3 +1,7 @@
+/*
+- No se pude implementar el remove BE secuencial porqué la cantidad de poligonos a guardar en la nueva malla, no hay forma de usar guardar n nuevos poligonos y la vez los triangulos semilla de estos en poligonos. Guardar ambos en registos sobrepasa la capacidad de registros por hilo
+*/
+
 #include <iostream>
 #include <stdio.h>   
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
@@ -210,7 +214,7 @@ int main(int argc, char* argv[])
 	std::cout<<"terminado label frontier"<<std::endl;
 	//Desconectar frontier-edges
 	//disconnect_edges<<<numBlocks, numThreads>>>(cu_adj, cu_disconnect, tnumber);
-	disconnect_edges<<<numBlocks_edge, numThreads>>>(cu_adj, cu_disconnect, enumber);
+	//disconnect_edges<<<numBlocks_edge, numThreads>>>(cu_adj, cu_disconnect, enumber);
 	cudaDeviceSynchronize();
 	std::cout<<"terminado disconnect"<<std::endl;
 	auto te_label =std::chrono::high_resolution_clock::now();	
@@ -249,25 +253,7 @@ int main(int argc, char* argv[])
 	cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(seed, cu_seed, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-  /*	
-	  //imprimir polginos
-	for(i = 0; i < i_ind_poly; i++)	
-		std::cout<< ind_poly[i]<<" ";
-	std::cout<<std::endl;
-	for(i = 0; i < i_mesh; i++)	
-		std::cout<< mesh[i]<<" ";
-	std::cout<<std::endl;
 
-
-	int k, poly[100];
-	for(i = 0; i < i_ind_poly; i++){
-		std::cout<<"("<<ind_poly[i]<<") "<<mesh[ind_poly[i]]<<": ";
-		for(k = 0; k < mesh[ind_poly[i]]; k++){
-			std::cout<< mesh[ind_poly[i] + 1 + k]<<" ";
-		}
-		std::cout<<std::endl;
-	}
-*/	
 
 	int num_poly;
 	//std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
@@ -302,6 +288,7 @@ int main(int argc, char* argv[])
 		cudaMemcpy(&is_there_bet, cu_is_there_bet, 1*sizeof(int), cudaMemcpyDeviceToHost);	
 		std::cout<<"has_bet? "<<is_there_bet<<", counter: "<<counter<<std::endl;	
 	}
+	
 	auto te_reparation = std::chrono::high_resolution_clock::now();
 	auto t2 = std::chrono::high_resolution_clock::now();
 

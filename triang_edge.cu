@@ -339,7 +339,8 @@ __global__ void label_frontier_edges(int *cu_max, int *cu_disconnect, int *cu_tr
     int i = floorf(N/3);
     if(N < enumber)
     {
-        cu_disconnect[N] = (cu_adj[N] != -1) && is_nomax_nomax(i, cu_adj[N], cu_triangles, cu_max);
+        //cu_disconnect[N] = (cu_adj[N] != -1) && is_nomax_nomax(i, cu_adj[N], cu_triangles, cu_max);
+        cu_adj[N] = ((cu_adj[N] < 0) || is_nomax_nomax(i, cu_adj[N], cu_triangles, cu_max)) ? -1 : cu_adj[N];
     }
 
 }
