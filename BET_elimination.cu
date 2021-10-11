@@ -4,6 +4,31 @@
 #include <stdio.h>
 
 //Search a triangle asociated to a barrier-edge that contains vertex v
+//This use trivertex to find a triangle asociated to v and travel through  adjacents triangles until find one with frontie-edges
+//Input:  index vertex v, array of triangles, array of neigh, number of triangles, array that asociated each triangle to a vertex
+//output: index of triangle that have one frontier-edge that contains v
+__device__ int search_triangle_by_vertex_with_FrontierEdge_from_trivertex(int v, int *triangles, int *adj, int tnumber, int* trivertex){
+	int t = trivertex[v];
+	int origen = -1;
+	int j, aux;
+	while (1)
+	{
+		for (j = 0; j < 3; j++){
+			//If the triangle contains v and has 2 fronter-edges
+			if(triangles[3*t +j] == v  && ( adj[3*t + ((j + 1)%3)] == -1 || adj[3*t + ((j + 2)%3)] == -1 ))
+				return t;
+		}
+		//avanza al siguiente triangulo
+		aux = t;
+        t = get_adjacent_triangle_share_endpoint(t, origen, v, triangles, adj);
+        origen = aux;
+
+	}	
+	return -1;
+}
+
+
+//Search a triangle asociated to a barrier-edge that contains vertex v
 //This doesnt use trivertex to find a triangle asociated to v, instead of, search in the list of the triangles one that containts v as frontier-edge, so the cost is o(n) per search
 //Input:  index vertex v, array of triangles, array of neigh, number of triangles, array that asociated each triangle to a vertex
 //output: index of triangle that have one frontier-edge that contains v
@@ -22,6 +47,7 @@ __device__ int search_triangle_by_vertex_with_FrontierEdge(int v, int *triangles
     //exit(0);
 	return -1;
 }
+
 
 //Given a triangle i, return the triangle adjacent to the triangle origen that containts the vertex v
 __device__ int search_prev_vertex_to_split(int i, int v, int origen, int *triangles, int *adj){
@@ -202,6 +228,7 @@ __device__ int get_vertex_BarrierEdge(int *poly, int length_poly){
     //exit(0);
     return -1;
 }
+
 
 
 __device__ int generate_polygon_from_BET_removal(int i, int * poly, int * triangles, int * adj, double *r, int ind_poly){
@@ -540,7 +567,7 @@ __global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly,
 //OUTPUT
 //cu_mesh_aux: new polygon mesh
 //is_there_bet: atomic variable to check if there are bet or not
-__global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *cu_i_mesh, int* cu_i_ind_poly, int *is_there_bet){
+__global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *cu_i_mesh, int* cu_i_ind_poly, int* cu_trivertex, int *is_there_bet){
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;
@@ -572,6 +599,7 @@ __global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly
 			
 			
 			//v_be = get_vertex_BarrierEdge(poly, length_poly);
+			//t1 = search_triangle_by_vertex_with_FrontierEdge_from_trivertex(v_be, cu_triangles, cu_adj, tnumber, cu_trivertex);
 			t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, cu_triangles, cu_adj, tnumber);
 			v_other = optimice_middle_edge_no_memory(&t1, v_be, cu_triangles, cu_adj);
 			t2 = get_adjacent_triangle(t1, v_other, v_be, cu_triangles, cu_adj);

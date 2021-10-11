@@ -63,7 +63,8 @@ int main(int argc, char* argv[])
 	int *mesh;
 	int *disconnect;
 	int *ind_poly;
-	
+	int *trivertex;
+
 	
     tnumber = Tr->tnumber;
     pnumber = Tr->pnumber;
@@ -76,7 +77,7 @@ int main(int argc, char* argv[])
     triangles = (int *)malloc(3*tnumber*sizeof(int));
 	mesh = (int *)malloc(3*tnumber*sizeof(int));
 	ind_poly = (int *)malloc(3*tnumber*sizeof(int));
-	
+	trivertex = (int *)malloc(pnumber*sizeof(int));
 
 	//Cuda functions
     // Initialize device pointers.
@@ -90,6 +91,7 @@ int main(int argc, char* argv[])
 	int *cu_mesh_aux;
 	int *cu_ind_poly;
 	int *cu_ind_poly_aux;
+	int *cu_trivertex;
 
 	// Allocate device memory.
 	cudaMalloc((void**) &cu_max, tnumber*sizeof(int));
@@ -102,6 +104,7 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_mesh_aux, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_ind_poly, tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_ind_poly_aux, tnumber*sizeof(int));
+	cudaMalloc((void**) &cu_trivertex, pnumber*sizeof(int));
 
 	/* Llamada a detr2 */
 	{
@@ -189,8 +192,8 @@ int main(int argc, char* argv[])
 	int numBlocks_edge  = (enumber + (numThreads-1))/numThreads;
 
 
-	//Inicializar seeds y disconnect
-	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, cu_disconnect, tnumber);
+	//Inicializar seeds y trivertex
+	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, cu_trivertex, cu_triangles, tnumber);
 	cudaDeviceSynchronize();
 
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -275,10 +278,10 @@ int main(int argc, char* argv[])
 		cudaMemcpy(cu_is_there_bet, &is_there_bet, sizeof(int), cudaMemcpyHostToDevice);
 
 		if(counter%2 == 0){
-			polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
+			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
 			std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
 		}else{
-			polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
+			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
 			std::cout<<"mesh esta en cu_mesh"<<std::endl;
 		}
 		
