@@ -63,21 +63,20 @@ int main(int argc, char* argv[])
 	int *mesh;
 	int *disconnect;
 	int *ind_poly;
-	int *trivertex;
 
-	
+	//read_from_triangle(pnumber, tnumber, r, triangles, adj);
+	//std::cout << " " << tnumber << " " << pnumber << "\n";
+
     tnumber = Tr->tnumber;
     pnumber = Tr->pnumber;
-
-	max = (int *)malloc(tnumber*sizeof(int));
-	disconnect = (int *)malloc(3*tnumber*sizeof(int));
-	seed = (int *)malloc(tnumber*sizeof(int));
     r = (double *)malloc(2*tnumber*sizeof(double));
     adj =(int *)malloc(3*tnumber*sizeof(int));
     triangles = (int *)malloc(3*tnumber*sizeof(int));
+	max = (int *)malloc(tnumber*sizeof(int));
+	disconnect = (int *)malloc(3*tnumber*sizeof(int));
+	seed = (int *)malloc(tnumber*sizeof(int));
 	mesh = (int *)malloc(3*tnumber*sizeof(int));
 	ind_poly = (int *)malloc(3*tnumber*sizeof(int));
-	trivertex = (int *)malloc(pnumber*sizeof(int));
 
 	//Cuda functions
     // Initialize device pointers.
@@ -108,8 +107,7 @@ int main(int argc, char* argv[])
 
 	/* Llamada a detr2 */
 	{
-
-
+	
     int idx =0;
     //copiar arreglo de vertices
     //std::cout<<"pnumber "<<pnumber<<std::endl;
@@ -153,6 +151,7 @@ int main(int argc, char* argv[])
         idx++;
     }
 	delete Tr;
+	
 	}
 
 		

@@ -1,7 +1,8 @@
-#include <iostream>
 #include <vector> 
 #include <algorithm>
-
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #include <errno.h>
 #include <stdlib.h>
@@ -9,12 +10,80 @@
 #include <string.h>
 #include <malloc.h>
 #include "consts.h"
-//#include "triangle.cuh"
-#include "triang_edge.cuh"
 
 #define filespath "input/"
 #define filespathoutput "output/"
 
+
+void read_from_triangle(int &pnumber, int &tnumber, double *&points, int *&triangles, int *&neigh){
+    std::string line;
+    std::ifstream nodefile("autodata.1.node");
+    double a1, a2, a3, a4;
+    int i = 0;
+    
+    //std::cout<<"Node file"<<std::endl;
+    if (nodefile.is_open())
+    {
+        nodefile >> pnumber ;
+        //std::cout<<pnumber<<std::endl;
+
+        std::getline(nodefile, line); 
+        points = (double *)malloc(2*pnumber*sizeof(double));
+        while (nodefile >> a1 >> a2 >> a3 >> a4)
+        {
+            points[2*i + 0] = a2;
+            points[2*i + 1] = a3;
+            //std::cout<<points[2*i + 0]<<" "<<points[2*i + 1]<<std::endl;
+            i++;
+            //std::cout<<a2<<" "<<a3<<std::endl;
+            
+        }
+        
+    }
+    else 
+        std::cout << "Unable to open node file"; 
+
+    nodefile.close();
+
+
+    //std::cout<<"Ele file"<<std::endl;
+    std::ifstream elefile("autodata.1.ele");
+    int t1, t2, t3, t4;
+    i = 0;
+    if(elefile.is_open()){
+        elefile >> tnumber ;
+        triangles = (int *)malloc(3*tnumber*sizeof(int));
+        std::getline(elefile, line); 
+        while (elefile >> t1 >> t2 >> t3 >> t4 )
+        {
+            //std::cout<<t2<<" "<<t3<<" "<<t4<<std::endl;
+            triangles[3*i + 0] = t2;
+            triangles[3*i + 1] = t3;
+            triangles[3*i + 2] = t4;
+            //std::cout<<triangles[3*i + 0]<<" "<<triangles[3*i + 1]<<" "<<triangles[3*i + 2]<<std::endl;
+            i++;
+        }
+    }else std::cout << "Unable to open ele file";
+
+    elefile.close();
+
+    //std::cout<<"Neigh file"<<std::endl;
+    std::ifstream neighfile("autodata.1.neigh");
+    i = 0;
+    if(neighfile.is_open()){
+        std::getline(neighfile, line); 
+        neigh =(int *)malloc(3*tnumber*sizeof(int));
+        while (neighfile >> t1 >> t2 >> t3 >> t4 )
+        {
+            neigh[3*i + 0] = t2;
+            neigh[3*i + 1] = t3;
+            neigh[3*i + 2] = t4;
+            //std::cout<<t2<<" "<<t3<<" "<<t4<<std::endl;
+            i++;
+        }
+    }else std::cout << "Unable to open neigh file";
+    neighfile.close();
+}
 
 /*geomview output*/
 void write_geomview(double *r, int *triangles, int pnumber, int tnumber, int i_mesh, int *mesh, int *seed, int num_region, int print_triangles){
