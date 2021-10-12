@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <cstdlib>
 #include <algorithm>    // std::min
+#include <string>
 
 
 #include "consts.h"
@@ -48,9 +49,9 @@ int main(int argc, char* argv[])
     char* ppath;
     //char* ppath = const_cast<char*> ("test");
     //TMesh *Tr = new TMesh(nparam, params);    
-	auto tb_delaunay = std::chrono::high_resolution_clock::now();
-	TMesh *Tr = new TMesh(argc, argv);    	
-	auto te_delaunay = std::chrono::high_resolution_clock::now();
+	//auto tb_delaunay = std::chrono::high_resolution_clock::now();
+	//TMesh *Tr = new TMesh(argc, argv);    	
+	//auto te_delaunay = std::chrono::high_resolution_clock::now();
     //Tr->print();
     
 	
@@ -64,14 +65,16 @@ int main(int argc, char* argv[])
 	int *disconnect;
 	int *ind_poly;
 
-	//read_from_triangle(pnumber, tnumber, r, triangles, adj);
-	//std::cout << " " << tnumber << " " << pnumber << "\n";
+	std::string name(argv[1]);
+	std::cout<<name<<std::endl;
+	read_from_triangle(name, pnumber, tnumber, r, triangles, adj);
+	std::cout << " " << tnumber << " " << pnumber << "\n";
 
-    tnumber = Tr->tnumber;
-    pnumber = Tr->pnumber;
-    r = (double *)malloc(2*tnumber*sizeof(double));
-    adj =(int *)malloc(3*tnumber*sizeof(int));
-    triangles = (int *)malloc(3*tnumber*sizeof(int));
+    //tnumber = Tr->tnumber;
+    //pnumber = Tr->pnumber;
+    //r = (double *)malloc(2*tnumber*sizeof(double));
+    //adj =(int *)malloc(3*tnumber*sizeof(int));
+    //triangles = (int *)malloc(3*tnumber*sizeof(int));
 	max = (int *)malloc(tnumber*sizeof(int));
 	disconnect = (int *)malloc(3*tnumber*sizeof(int));
 	seed = (int *)malloc(tnumber*sizeof(int));
@@ -107,7 +110,7 @@ int main(int argc, char* argv[])
 
 	/* Llamada a detr2 */
 	{
-	
+	/*
     int idx =0;
     //copiar arreglo de vertices
     //std::cout<<"pnumber "<<pnumber<<std::endl;
@@ -151,7 +154,7 @@ int main(int argc, char* argv[])
         idx++;
     }
 	delete Tr;
-	
+	*/
 	}
 
 		
@@ -194,32 +197,41 @@ int main(int argc, char* argv[])
 	//Inicializar seeds y trivertex
 	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, cu_trivertex, cu_triangles, tnumber);
 	cudaDeviceSynchronize();
-
+	
 	auto t1 = std::chrono::high_resolution_clock::now();
-	auto tb_label =std::chrono::high_resolution_clock::now();	
 
+	auto tb_label =std::chrono::high_resolution_clock::now();	
 	//Label phase
 	//Etiquetar el más largo;
 	std::cout<<"Inicia label longest"<<std::endl;
+	auto tb_label_max = std::chrono::high_resolution_clock::now();
 	label_longest_edges<<<numBlocks, numThreads>>>(cu_max, cu_r, cu_triangles, tnumber);
 	cudaDeviceSynchronize();
+	auto te_label_max = std::chrono::high_resolution_clock::now();
 	
+
 	//Encontrar un triangulo semilla asociado al arco terminal
+	auto tb_label_seed = std::chrono::high_resolution_clock::now();
 	//get_seeds<<<numBlocks, numThreads>>>(cu_max, cu_triangles, cu_adj, cu_seed, tnumber);
 	std::cout<<"inicia get seeds"<<std::endl;
 	get_seeds<<<numBlocks_edge, numThreads>>>(cu_max, cu_triangles, cu_adj, cu_seed, enumber);
 	cudaDeviceSynchronize();
+	auto te_label_seed = std::chrono::high_resolution_clock::now();
+
+	auto tb_label_non_frontier = std::chrono::high_resolution_clock::now();
 	//Etiquetar label frontier-edges
 	//label_frontier_edges<<<numBlocks, numThreads>>>(cu_max, cu_disconnect, cu_triangles, cu_adj, tnumber);
 	label_frontier_edges<<<numBlocks_edge, numThreads>>>(cu_max, cu_disconnect, cu_triangles, cu_adj, enumber);
 	cudaDeviceSynchronize();
+	auto te_label_non_frontier = std::chrono::high_resolution_clock::now();
 	std::cout<<"terminado label frontier"<<std::endl;
 	//Desconectar frontier-edges
 	//disconnect_edges<<<numBlocks, numThreads>>>(cu_adj, cu_disconnect, tnumber);
 	//disconnect_edges<<<numBlocks_edge, numThreads>>>(cu_adj, cu_disconnect, enumber);
 	cudaDeviceSynchronize();
 	std::cout<<"terminado disconnect"<<std::endl;
-	auto te_label =std::chrono::high_resolution_clock::now();	
+
+	auto te_label =std::chrono::high_resolution_clock::now();
 
 
 	//Se ordenan las semillas
@@ -307,13 +319,16 @@ int main(int argc, char* argv[])
 	cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost);
 	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
 
-	write_geomview(r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
+	write_geomview(name, r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
 
 	std::cout << std::setprecision(3) << std::fixed;
     std::cout <<"pnumber tnumber num_reg talgorithm tlabel  ttravel ttreparation"<<std::endl;
 	std::cout<<pnumber<<" "<<tnumber<<" "<<i_ind_poly;
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1 ).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label - tb_label).count();
+	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_max - tb_label_max).count();
+	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_seed - tb_label_seed).count();
+	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_non_frontier - tb_label_non_frontier).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_reparation - tb_reparation ).count();
 

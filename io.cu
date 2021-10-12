@@ -15,9 +15,9 @@
 #define filespathoutput "output/"
 
 
-void read_from_triangle(int &pnumber, int &tnumber, double *&points, int *&triangles, int *&neigh){
+void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&points, int *&triangles, int *&neigh){
     std::string line;
-    std::ifstream nodefile("autodata.1.node");
+    std::ifstream nodefile(name + ".node");
     double a1, a2, a3, a4;
     int i = 0;
     
@@ -47,7 +47,7 @@ void read_from_triangle(int &pnumber, int &tnumber, double *&points, int *&trian
 
 
     //std::cout<<"Ele file"<<std::endl;
-    std::ifstream elefile("autodata.1.ele");
+    std::ifstream elefile(name + ".ele");
     int t1, t2, t3, t4;
     i = 0;
     if(elefile.is_open()){
@@ -68,7 +68,7 @@ void read_from_triangle(int &pnumber, int &tnumber, double *&points, int *&trian
     elefile.close();
 
     //std::cout<<"Neigh file"<<std::endl;
-    std::ifstream neighfile("autodata.1.neigh");
+    std::ifstream neighfile(name + ".neigh");
     i = 0;
     if(neighfile.is_open()){
         std::getline(neighfile, line); 
@@ -86,13 +86,14 @@ void read_from_triangle(int &pnumber, int &tnumber, double *&points, int *&trian
 }
 
 /*geomview output*/
-void write_geomview(double *r, int *triangles, int pnumber, int tnumber, int i_mesh, int *mesh, int *seed, int num_region, int print_triangles){
+void write_geomview(std::string name, double *r, int *triangles, int pnumber, int tnumber, int i_mesh, int *mesh, int *seed, int num_region, int print_triangles){
 
     int i,j;
     char cmd[1024] = "\0";
     strcat(cmd, filespathoutput);
-    //strcat(cmd, ppath);
-    strcat(cmd,"autodata.off");
+    strcat(cmd, name.c_str());
+    strcat(cmd,".off");
+    
     FILE *fptr;
     fptr = fopen(cmd, "w");
     if(fptr == NULL){
