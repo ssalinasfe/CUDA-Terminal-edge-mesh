@@ -82,6 +82,8 @@ int main(int argc, char* argv[])
 	mesh = (int *)malloc(3*tnumber*sizeof(int));
 	ind_poly = (int *)malloc(3*tnumber*sizeof(int));
 
+	
+
 	//Cuda functions
     // Initialize device pointers.
     double *cu_r;
@@ -112,54 +114,6 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_trivertex, pnumber*sizeof(int));
 
 	std::cout << "Solicitada memoria cuda"<<std::endl;
-	/* Llamada a detr2 */
-	{
-	/*
-    int idx =0;
-    //copiar arreglo de vertices
-    //std::cout<<"pnumber "<<pnumber<<std::endl;
-    for (i = 0; i < Tr->trimesh->ct_in_vrts; i++) {
-        if (!Tr->trimesh->io_keep_unused) { // no -IJ
-            if (Tr->trimesh->in_vrts[i].typ == UNUSEDVERTEX) continue;
-        }
-        r[2*i + 0]= Tr->trimesh->in_vrts[i].crd[0];
-        r[2*i + 1]= Tr->trimesh->in_vrts[i].crd[1];
-        //std::cout<<idx<<" ("<<r[2*i + 0]<<", "<<r[2*i + 1]<<") "<<std::endl;
-        Tr->trimesh->in_vrts[i].idx = idx;
-        idx++;
-    }
-    idx = 0;
-    for (int i = 0; i < Tr->trimesh->tr_tris->used_items; i++) {
-        detri2::Triang* tri = (detri2::Triang *) Tr->trimesh->tr_tris->get(i);
-        if (tri->is_deleted()) continue;
-        if (tri->is_hulltri()) {
-            tri->idx = -1;
-        } else {
-            tri->idx = idx;
-            idx++;
-        }
-    }
-
-    //std::cout<<"tnumber: "<<Tr->trimesh->tr_tris->objects - Tr->trimesh->ct_hullsize<<std::endl;
-    idx = 0;
-    for (int i = 0; i < Tr->trimesh->tr_tris->used_items; i++)
-    {
-        
-        detri2::Triang* tri = (detri2::Triang *) Tr->trimesh->tr_tris->get(i);
-        if (tri->is_deleted() || tri->is_hulltri()) continue;
-        triangles[3*idx+0] = tri->vrt[0]->idx;
-        triangles[3*idx+1] = tri->vrt[1]->idx;
-        triangles[3*idx+2] = tri->vrt[2]->idx;
-        adj[3*idx+ 0] = tri->nei[0].tri->idx;
-        adj[3*idx+ 1] = tri->nei[1].tri->idx;
-        adj[3*idx+ 2] = tri->nei[2].tri->idx;
-        //std::cout<<idx<<" | "<<triangles[3*idx+0]<<" "<<triangles[3*idx+1]<<" "<<triangles[3*idx+2]<<" | ";
-        //std::cout<<adj[3*idx+ 0]<<" "<<adj[3*idx+ 1]<<" "<<adj[3*idx+ 2]<<" | "<<std::endl;
-        idx++;
-    }
-	delete Tr;
-	*/
-	}
 
 		
     // Transfer arrays to device.
@@ -177,6 +131,7 @@ int main(int argc, char* argv[])
 	cudaMemcpy(cu_mesh, mesh,             3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
 	//std::cout<<"7"<<std::endl;
 	cudaMemcpy(cu_ind_poly, ind_poly,    tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	cudaMemcpy(cu_trivertex, trivertex,    pnumber*sizeof(int), cudaMemcpyHostToDevice);
 	
 	std::cout<<"copiada memoria cuda"<<std::endl;
 
@@ -207,7 +162,7 @@ int main(int argc, char* argv[])
 
 
 	//Inicializar seeds y trivertex
-	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, cu_trivertex, cu_triangles, tnumber);
+	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, tnumber);
 	cudaDeviceSynchronize();
 	
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -283,6 +238,7 @@ int main(int argc, char* argv[])
 
 	int num_poly;
 	//std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
+	std::cout<<"Iniciando mesh reparation num poly: "<<i_ind_poly<<std::endl;
 	int counter = 0;
 	//cudaMemcpy(cu_ind_poly_aux, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToDevice);
 	auto tb_reparation = std::chrono::high_resolution_clock::now();

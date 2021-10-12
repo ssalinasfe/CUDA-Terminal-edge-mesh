@@ -13,5 +13,4 @@ __global__ void label_longest_edges(int *cu_max, double *cu_r, int *cu_triangles
 __global__ void label_frontier_edges(int *cu_max, int *cu_triangles, int *cu_adj, int enumber);
 __global__ void get_seeds(int *cu_max, int *cu_triangles, int *cu_adj, int *cu_seed, int enumber);
 __global__ void disconnect_edges(int *cu_adj, int* cu_disconnect, int enumber);
-__global__ void initialize_memory(int *cu_seed, int* cu_trivertex, int* cu_triangles, int tnumber);
-
+__global__ void initialize_memory(int *cu_seed, int tnumber);

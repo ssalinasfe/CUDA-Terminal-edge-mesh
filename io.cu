@@ -92,7 +92,7 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
         trivertex =(int *)malloc(pnumber*sizeof(int));
         while (trivertexfile >> t1 >> t2)
         {
-            trivertex[t1] = t2;
+            trivertex[i] = t2;
             i++;
         }
     }else std::cout << "Unable to open neigh file";

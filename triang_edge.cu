@@ -354,7 +354,7 @@ __global__ void disconnect_edges(int *cu_adj, int* cu_disconnect, int enumber){
 }
 
 
-__global__ void initialize_memory(int *cu_seed, int* cu_trivertex, int* cu_triangles, int tnumber){
+__global__ void initialize_memory(int *cu_seed, int tnumber){
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int j;
     if(i < tnumber){
