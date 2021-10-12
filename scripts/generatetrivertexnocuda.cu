@@ -95,6 +95,7 @@ int main(int argc, char* argv[]) {
     int *cu_trivertex;
 
     int pnumber, tnumber;
+    int i,j;
     std::string name(argv[1]);
 	std::cout<<name<<std::endl;
 	read_from_triangle(name, pnumber, tnumber, points, triangles, neigh);
