@@ -8,7 +8,7 @@ add_subdirectory(detri2)
 add_executable(DelaunayPolyGenerator main.cu triang_edge.cu polygon.cu io.cu BET_elimination.cu)
 
 set_target_properties(DelaunayPolyGenerator PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_link_libraries(DelaunayPolyGenerator detri2)
+#target_link_libraries(DelaunayPolyGenerator detri2)
 
 
 
