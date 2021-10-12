@@ -15,7 +15,7 @@
 #define filespathoutput "output/"
 
 
-void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&points, int *&triangles, int *&neigh){
+void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&points, int *&triangles, int *&neigh, int *&trivertex){
     std::string line;
     std::ifstream nodefile(name + ".node");
     double a1, a2, a3, a4;
@@ -83,6 +83,20 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
         }
     }else std::cout << "Unable to open neigh file";
     neighfile.close();
+
+    //std::cout<<"Neigh file"<<std::endl;
+    std::ifstream trivertexfile(name + ".trivertex");
+    i = 0;
+    if(trivertexfile.is_open()){
+        std::getline(trivertexfile, line); 
+        trivertex =(int *)malloc(pnumber*sizeof(int));
+        while (trivertexfile >> t1 >> t2)
+        {
+            trivertex[t1] = t2;
+            i++;
+        }
+    }else std::cout << "Unable to open neigh file";
+    trivertexfile.close();
 }
 
 /*geomview output*/

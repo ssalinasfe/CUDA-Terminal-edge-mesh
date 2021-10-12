@@ -64,10 +64,11 @@ int main(int argc, char* argv[])
 	int *mesh;
 	int *disconnect;
 	int *ind_poly;
-
+	int *trivertex;
+	
 	std::string name(argv[1]);
 	std::cout<<name<<std::endl;
-	read_from_triangle(name, pnumber, tnumber, r, triangles, adj);
+	read_from_triangle(name, pnumber, tnumber, r, triangles, adj, trivertex);
 	std::cout << " " << tnumber << " " << pnumber << "\n";
 
     //tnumber = Tr->tnumber;
@@ -342,7 +343,7 @@ int main(int argc, char* argv[])
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_non_frontier - tb_label_non_frontier).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
 	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_reparation - tb_reparation ).count();
-
+	std::cout<<std::endl;
 /*
   	//imprimir polginos
 	std::cout<<"\n num poly: "<<i_ind_poly<<", i_mesh: "<<i_mesh<<std::endl;

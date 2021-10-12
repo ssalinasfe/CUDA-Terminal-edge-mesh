@@ -359,11 +359,5 @@ __global__ void initialize_memory(int *cu_seed, int* cu_trivertex, int* cu_trian
     int j;
     if(i < tnumber){
     cu_seed[i] = FALSE;  
-    for (j = 0; j < tnumber; j++){
-        if(i == cu_triangles[3*j + 0] ||  i == cu_triangles[3*j + 1] || i == cu_triangles[3*j + 2]){
-            cu_trivertex[i] = j;
-            break;
-        }
-    }
     }
 }
