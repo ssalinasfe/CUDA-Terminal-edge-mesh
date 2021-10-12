@@ -5,8 +5,8 @@
 #include <iostream>
 #include <stdio.h>   
 #include <stdlib.h>     /* exit, EXIT_FAILURE */
-#include "detri2.h"
-#include "polymesh.h"
+//#include "detri2.h"
+//#include "polymesh.h"
 #include <vector> 
 #include <chrono>
 #include <iomanip>
