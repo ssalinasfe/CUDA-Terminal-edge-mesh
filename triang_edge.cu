@@ -333,7 +333,7 @@ __global__ void get_seeds(int *cu_max, int *cu_triangles, int *cu_adj, int *cu_s
     }
 }
 
-__global__ void label_frontier_edges(int *cu_max, int *cu_disconnect, int *cu_triangles, int *cu_adj, int enumber)
+__global__ void label_frontier_edges(int *cu_max, int *cu_triangles, int *cu_adj, int enumber)
 {
     int N = blockDim.x * blockIdx.x + threadIdx.x;
     int i = floorf(N/3);

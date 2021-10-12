@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     //adj =(int *)malloc(3*tnumber*sizeof(int));
     //triangles = (int *)malloc(3*tnumber*sizeof(int));
 	max = (int *)malloc(tnumber*sizeof(int));
-	disconnect = (int *)malloc(3*tnumber*sizeof(int));
+	//disconnect = (int *)malloc(3*tnumber*sizeof(int));
 	seed = (int *)malloc(tnumber*sizeof(int));
 	mesh = (int *)malloc(3*tnumber*sizeof(int));
 	ind_poly = (int *)malloc(3*tnumber*sizeof(int));
@@ -88,18 +88,20 @@ int main(int argc, char* argv[])
 	int *cu_adj;
     int *cu_seed;
 	int *cu_max;
-	int *cu_disconnect;
+	//int *cu_disconnect;
 	int *cu_mesh;
 	int *cu_mesh_aux;
 	int *cu_ind_poly;
 	int *cu_ind_poly_aux;
 	int *cu_trivertex;
 
+	std::cout << "Solicitando memoria cuda"<<std::endl;
+
 	// Allocate device memory.
 	cudaMalloc((void**) &cu_max, tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_seed, tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_disconnect, 3*tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_r, 2*tnumber*sizeof(double));
+	//cudaMalloc((void**) &cu_disconnect, 3*tnumber*sizeof(int));
+	cudaMalloc((void**) &cu_r, 2*pnumber*sizeof(double));
 	cudaMalloc((void**) &cu_triangles, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_adj, 3*tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_mesh, 3*tnumber*sizeof(int));
@@ -108,6 +110,7 @@ int main(int argc, char* argv[])
 	cudaMalloc((void**) &cu_ind_poly_aux, tnumber*sizeof(int));
 	cudaMalloc((void**) &cu_trivertex, pnumber*sizeof(int));
 
+	std::cout << "Solicitada memoria cuda"<<std::endl;
 	/* Llamada a detr2 */
 	{
 	/*
@@ -159,15 +162,23 @@ int main(int argc, char* argv[])
 
 		
     // Transfer arrays to device.
-    cudaMemcpy(cu_r, r,                   2*tnumber*sizeof(double), cudaMemcpyHostToDevice);
+	//std::cout<<"1"<<std::endl;
+    cudaMemcpy(cu_r, r,                   2*pnumber*sizeof(double), cudaMemcpyHostToDevice);
+	//std::cout<<"2"<<std::endl;
 	cudaMemcpy(cu_triangles, triangles,   3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	//std::cout<<"3"<<std::endl;
 	cudaMemcpy(cu_adj, adj,               3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	//std::cout<<"4"<<std::endl;
 	cudaMemcpy(cu_seed, seed,    		  tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	//std::cout<<"5"<<std::endl;
 	cudaMemcpy(cu_max, max,               tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_disconnect, disconnect, 3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	//std::cout<<"6"<<std::endl;
 	cudaMemcpy(cu_mesh, mesh,             3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
+	//std::cout<<"7"<<std::endl;
 	cudaMemcpy(cu_ind_poly, ind_poly,    tnumber*sizeof(int), cudaMemcpyHostToDevice);
 	
+	std::cout<<"copiada memoria cuda"<<std::endl;
+
 	//se consigue el indice de la malla i_mesh
 	int i_mesh = 0;
 	int *cu_i_mesh;
@@ -221,7 +232,7 @@ int main(int argc, char* argv[])
 	auto tb_label_non_frontier = std::chrono::high_resolution_clock::now();
 	//Etiquetar label frontier-edges
 	//label_frontier_edges<<<numBlocks, numThreads>>>(cu_max, cu_disconnect, cu_triangles, cu_adj, tnumber);
-	label_frontier_edges<<<numBlocks_edge, numThreads>>>(cu_max, cu_disconnect, cu_triangles, cu_adj, enumber);
+	label_frontier_edges<<<numBlocks_edge, numThreads>>>(cu_max, cu_triangles, cu_adj, enumber);
 	cudaDeviceSynchronize();
 	auto te_label_non_frontier = std::chrono::high_resolution_clock::now();
 	std::cout<<"terminado label frontier"<<std::endl;
@@ -382,7 +393,7 @@ int main(int argc, char* argv[])
 	cudaFree(cu_mesh);
 	cudaFree(cu_max);
 	cudaFree(cu_i_mesh);
-	cudaFree(cu_disconnect);
+	//cudaFree(cu_disconnect);
 	cudaFree(cu_ind_poly);
 	cudaFree(cu_mesh_aux);
 	cudaFree(cu_ind_poly_aux);
