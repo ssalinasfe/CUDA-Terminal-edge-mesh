@@ -49,7 +49,7 @@ __device__ int max_edge_index(int i, double *r, int *p){
      l1 = dist(r[2*p1 + 0], r[2*p1 + 1], r[2*p2 + 0], r[2*p2 + 1]);
      l2 = dist(r[2*p2 + 0], r[2*p2 + 1], r[2*p0 + 0], r[2*p0 + 1]);
 
-     double epsion = 0.001f;
+     double epsion = 0.000000000001f;
  
      if( (GreaterEqualthan(l0,l1,epsion) && GreaterEqualthan(l1,l2,epsion)) || ( GreaterEqualthan(l0,l2,epsion) && GreaterEqualthan(l2,l1,epsion)))
      {
@@ -356,8 +356,7 @@ __global__ void disconnect_edges(int *cu_adj, int* cu_disconnect, int enumber){
 
 __global__ void initialize_memory(int *cu_seed, int tnumber){
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int j;
     if(i < tnumber){
-    cu_seed[i] = FALSE;  
+        cu_seed[i] = FALSE;  
     }
 }
