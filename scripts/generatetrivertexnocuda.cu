@@ -73,10 +73,10 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
     neighfile.close();
 }
 
-__global__ void initialize_memory(int* cu_trivertex, int* cu_triangles, int pnumber, int tnumber){
+__global__ void initialize_memory(int* cu_trivertex, int* cu_triangles, int tnumber){
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int j;
-    if(i < pnumber){  
+    if(i < tnumber){  
         for (j = 0; j < tnumber; j++){
             if(i == cu_triangles[3*j + 0] ||  i == cu_triangles[3*j + 1] || i == cu_triangles[3*j + 2]){
                 cu_trivertex[i] = j;
@@ -101,16 +101,18 @@ int main(int argc, char* argv[]) {
 	std::cout << " " << tnumber << " " << pnumber << "\n";
 
     trivertex = (int *)malloc(pnumber*sizeof(int));
-	cudaMalloc((void**) &cu_triangles, 3*tnumber*sizeof(int));
-	cudaMemcpy(cu_triangles, triangles, 3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMalloc((void**) &cu_trivertex, pnumber*sizeof(int));
-	int numThreads = 128;  // max register per block is 65536, 65536/512
+	
     std::cout<<"generating trivertex"<<std::endl;
-	initialize_memory<<<(pnumber + (numThreads-1))/numThreads, numThreads>>>( cu_trivertex, cu_triangles, pnumber, tnumber);
-    
-	cudaMemcpy(trivertex, cu_trivertex, pnumber*sizeof(int), cudaMemcpyDeviceToHost);
-	cudaFree(cu_trivertex);
-	cudaFree(cu_triangles);
+	for(i = 0; i < pnumber; i++){
+		for (j = 0; j < tnumber; j++)
+		{
+			if(i == triangles[3*j + 0] ||  i == triangles[3*j + 1] || i == triangles[3*j + 2]){
+				trivertex[i] = j;
+				break;
+			}
+		}
+		//std::cout<<"trivertex["<<i<<"] "<<trivertex[i]<<std::endl;
+	}
     
     std::cout<<"storing .trivertex"<<std::endl;
     std::ofstream myfile;

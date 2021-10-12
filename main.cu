@@ -257,12 +257,12 @@ int main(int argc, char* argv[])
 		cudaMemcpy(cu_is_there_bet, &is_there_bet, sizeof(int), cudaMemcpyHostToDevice);
 
 		if(counter%2 == 0){
-			//polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
-			polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
+			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
+			//polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
 			//std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
 		}else{
-			//polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
-			polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
+			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
+			//polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
 			//std::cout<<"mesh esta en cu_mesh"<<std::endl;
 		}
 		
