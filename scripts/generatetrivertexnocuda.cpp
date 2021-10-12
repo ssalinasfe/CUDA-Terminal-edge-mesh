@@ -73,18 +73,7 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
     neighfile.close();
 }
 
-__global__ void initialize_memory(int* cu_trivertex, int* cu_triangles, int tnumber){
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    int j;
-    if(i < tnumber){  
-        for (j = 0; j < tnumber; j++){
-            if(i == cu_triangles[3*j + 0] ||  i == cu_triangles[3*j + 1] || i == cu_triangles[3*j + 2]){
-                cu_trivertex[i] = j;
-                break;
-            }
-        }
-    }
-}
+
 
 int main(int argc, char* argv[]) {
     double *points;
