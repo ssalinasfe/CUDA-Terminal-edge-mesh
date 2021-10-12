@@ -386,6 +386,7 @@ int main(int argc, char* argv[])
 	cudaFree(cu_ind_poly);
 	cudaFree(cu_mesh_aux);
 	cudaFree(cu_ind_poly_aux);
+	cudaFree(cu_trivertex);
 	return EXIT_SUCCESS;
 }
     
