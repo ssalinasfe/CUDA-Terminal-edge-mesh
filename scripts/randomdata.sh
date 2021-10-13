@@ -1,14 +1,10 @@
 #!/bin/bash
 
-#i = $1
-#file = $2
+i=$1
 
-read -p "Enter start number " i
-#read -p "Enter increment " increment 10000000
-while [ $i -le 100000000000000 ]
+while [ $i -le 500000 ]
 do
   echo $i 
-  (eval "python3 2x2RandomPoints.py $i && triangle -zn 2x2_$i.node && ./generatetrivertex 2x2_$i.1")
-  #(eval "rm $i.node")
-  i=$(($i*10))
+  (eval "python3 10000x10000RandomPoints.py $i && triangle -zn 10000x10000_$i.node && ./generatetrivertex 10000x10000_$i.1")
+  i=$(($i + 1000000))
 done
