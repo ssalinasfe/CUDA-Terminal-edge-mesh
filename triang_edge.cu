@@ -308,6 +308,7 @@ __global__ void label_longest_edges(int *cu_max, double *cu_r, int *cu_triangles
     if(i < tnumber)
     {
         cu_max[i] = max_edge_index(i,cu_r, cu_triangles);
+        printf("cu_triangle %d %d %d ", cu_triangles[3*i+0], cu_triangles[3*i+1], cu_triangles[3*i+2]);
     }
 
 }
