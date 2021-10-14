@@ -318,27 +318,32 @@ __device__ int generate_polygon(int * poly, int * triangles, int * adj, double *
 }
 
 
-__global__ void generate_mesh(int *cu_triangles, int *cu_adj, double *cu_r, int *cu_seed, int *cu_mesh, int tnumber, int *cu_i_mesh, int *cu_ind_poly, int* cu_i_ind_poly)
+__global__ void generate_mesh(int *cu_triangles, int *cu_adj, double *cu_r, int *cu_seed, int *cu_mesh, int tnumber, unsigned long long int *cu_i_mesh, int *cu_ind_poly, unsigned long long int* cu_i_ind_poly)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     int i_mesh, i_ind_poly;
-    if(i < tnumber && cu_seed[i]){
-        int poly[100]; // CAMBIAR POR SHARE MEMORY
-        
-        int length_poly = generate_polygon(poly, cu_triangles, cu_adj, cu_r, i);
+    int poly[100];         
+    int length_poly;
 
-        __syncthreads();
+    if(i < tnumber ){
+        if(cu_seed[i]){
+            length_poly = generate_polygon(poly, cu_triangles, cu_adj, cu_r, i);
 
-        i_mesh = atomicAdd(cu_i_mesh, length_poly+1);
-        i_ind_poly = atomicAdd(cu_i_ind_poly, 1);
+            __syncthreads();
 
-        cu_ind_poly[i_ind_poly] = i_mesh;
-        
-        cu_mesh[i_mesh] = length_poly;
-
-        i_mesh++;
-        for(int k = 0; k <length_poly; k++){
-            cu_mesh[i_mesh + k] = poly[k];
+            i_mesh = atomicAdd(cu_i_mesh, length_poly+1);
+            i_ind_poly = atomicAdd(cu_i_ind_poly, 1);
+            
+          //  printf("%d %d %d %d %d %d N: %d \n", i, i_ind_poly, i_mesh, length_poly, *cu_i_mesh, *cu_i_ind_poly, tnumber);
+            
+            cu_ind_poly[i_ind_poly] = i_mesh;
+            cu_mesh[i_mesh] = length_poly;
+            
+            i_mesh++;
+            for(int k = 0; k <length_poly; k++){
+                cu_mesh[i_mesh + k] = poly[k];
+            }
+            
         }
     }
     

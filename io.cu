@@ -40,9 +40,10 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
         }
         
     }
-    else 
+    else{
         std::cout << "Unable to open node file"; 
-
+        exit(-1);
+        }
     nodefile.close();
 
 
@@ -63,7 +64,10 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
             //std::cout<<triangles[3*i + 0]<<" "<<triangles[3*i + 1]<<" "<<triangles[3*i + 2]<<std::endl;
             i++;
         }
-    }else std::cout << "Unable to open ele file";
+    }else{
+        std::cout << "Unable to open ele file";
+        exit(-1);
+    }
 
     elefile.close();
 
@@ -81,7 +85,10 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
             //std::cout<<t2<<" "<<t3<<" "<<t4<<std::endl;
             i++;
         }
-    }else std::cout << "Unable to open neigh file";
+    }else{
+         std::cout << "Unable to open neigh file";
+         exit(-1);
+    }
     neighfile.close();
 
     //std::cout<<"Neigh file"<<std::endl;
@@ -95,7 +102,10 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
             trivertex[i] = t2;
             i++;
         }
-    }else std::cout << "Unable to open neigh file";
+    }else{
+        std::cout << "Unable to open neigh file";
+        exit(-1);
+    } 
     trivertexfile.close();
 }
 

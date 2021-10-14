@@ -567,7 +567,7 @@ __global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly,
 //OUTPUT
 //cu_mesh_aux: new polygon mesh
 //is_there_bet: atomic variable to check if there are bet or not
-__global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *cu_i_mesh, int* cu_i_ind_poly, int* cu_trivertex, int *is_there_bet){
+__global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, unsigned long long int *cu_i_mesh, unsigned long long int* cu_i_ind_poly, int* cu_trivertex, int *is_there_bet){
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;

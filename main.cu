@@ -36,33 +36,28 @@
 #define debug_print(fmt, ...) do { if (DEBUG_TEST) fprintf(stderr, "%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, __VA_ARGS__); } while (0)
 #define debug_msg(fmt) do { if (DEBUG_TEST) fprintf(stderr, "%s:%d:%s(): " fmt, __FILE__,  __LINE__, __func__); } while (0)
 
-
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
 
 int main(int argc, char* argv[])
 {
 
-    int nparam = 3;
-    //char* params[] = {const_cast<char*> ("./detri2"), const_cast<char*> ("-z"), const_cast<char*> ("test.node")};
-	//char* params[] = {const_cast<char*> ("./detri2"), const_cast<char*> ("-z"), const_cast<char*> ("506randompoints.node")};
-	//char* params[] = {const_cast<char*> ("./detri2"), const_cast<char*> ("-z"), const_cast<char*> ("506equilateral.node")};
-    int print_triangles = 0;
-    char* ppath;
-    //char* ppath = const_cast<char*> ("test");
-    //TMesh *Tr = new TMesh(nparam, params);    
-	//auto tb_delaunay = std::chrono::high_resolution_clock::now();
-	//TMesh *Tr = new TMesh(argc, argv);    	
-	//auto te_delaunay = std::chrono::high_resolution_clock::now();
-    //Tr->print();
-    
+    //int print_triangles = 0;
 	
-	int tnumber, pnumber, i;
+	int tnumber, pnumber;
 	double *r;
 	int *triangles;
 	int *adj;
     int *seed;
 	int *max;
 	int *mesh;
-	int *disconnect;
 	int *ind_poly;
 	int *trivertex;
 	
@@ -79,7 +74,7 @@ int main(int argc, char* argv[])
 	max = (int *)malloc(tnumber*sizeof(int));
 	seed = (int *)malloc(tnumber*sizeof(int));
 	mesh = (int *)malloc(3*tnumber*sizeof(int));
-	ind_poly = (int *)malloc(3*tnumber*sizeof(int));
+	ind_poly = (int *)malloc(tnumber*sizeof(int));
 
 	
 
@@ -99,48 +94,48 @@ int main(int argc, char* argv[])
 	std::cout << "Solicitando memoria cuda"<<std::endl;
 
 	// Allocate device memory.
-	cudaMalloc((void**) &cu_max, tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_seed, tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_r, 2*pnumber*sizeof(double));
-	cudaMalloc((void**) &cu_triangles, 3*tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_adj, 3*tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_mesh, 3*tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_mesh_aux, 3*tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_ind_poly, tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_ind_poly_aux, tnumber*sizeof(int));
-	cudaMalloc((void**) &cu_trivertex, pnumber*sizeof(int));
+	gpuErrchk( cudaMalloc((void**) &cu_max,          tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_seed,         tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_r,            2*pnumber*sizeof(double)) );
+	gpuErrchk( cudaMalloc((void**) &cu_triangles,    3*tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_adj,          3*tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_mesh,         3*tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_mesh_aux,     3*tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_ind_poly,     tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_ind_poly_aux, tnumber*sizeof(int)) );
+	gpuErrchk( cudaMalloc((void**) &cu_trivertex,    pnumber*sizeof(int)) );
 
 	std::cout << "Solicitada memoria cuda"<<std::endl;
 
 		
     // Transfer arrays to device.
 	
-    cudaMemcpy(cu_r, r,                   2*pnumber*sizeof(double), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_triangles, triangles,   3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_adj, adj,               3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_seed, seed,    		  tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_max, max,               tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_mesh, mesh,             3*tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_ind_poly, ind_poly,    tnumber*sizeof(int), cudaMemcpyHostToDevice);
-	cudaMemcpy(cu_trivertex, trivertex,    pnumber*sizeof(int), cudaMemcpyHostToDevice);
+    gpuErrchk( cudaMemcpy(cu_r, r,                   2*pnumber*sizeof(double), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_triangles, triangles,   3*tnumber*sizeof(int), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_adj, adj,               3*tnumber*sizeof(int), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_seed, seed,    		 tnumber*sizeof(int), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_max, max,               tnumber*sizeof(int), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_mesh, mesh,             3*tnumber*sizeof(int), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_ind_poly, ind_poly,     tnumber*sizeof(int), cudaMemcpyHostToDevice) );
+	gpuErrchk( cudaMemcpy(cu_trivertex, trivertex,   pnumber*sizeof(int), cudaMemcpyHostToDevice) );
 	
 	std::cout<<"copiada memoria cuda"<<std::endl;
 
 	//se consigue el indice de la malla i_mesh
-	int i_mesh = 0;
-	int *cu_i_mesh;
-	cudaMalloc((void**) &cu_i_mesh, sizeof(int));
-	cudaMemcpy(cu_i_mesh, &i_mesh, 1*sizeof(int), cudaMemcpyHostToDevice);
+	unsigned long long int i_mesh = 0;
+	unsigned long long int *cu_i_mesh = 0;
+	gpuErrchk( cudaMalloc((void**) &cu_i_mesh, sizeof(unsigned long long int)) );
+	gpuErrchk( cudaMemcpy(cu_i_mesh, &i_mesh, sizeof(unsigned long long int), cudaMemcpyHostToDevice) );
 	
 	//se consigue el indice de ind_poly
-	int i_ind_poly = 0;
-	int *cu_i_ind_poly;
-	cudaMalloc((void**) &cu_i_ind_poly, sizeof(int));
-	cudaMemcpy(cu_i_ind_poly, &i_ind_poly, 1*sizeof(int), cudaMemcpyHostToDevice);
+	unsigned long long int i_ind_poly = 0;
+	unsigned long long int *cu_i_ind_poly = 0;
+	gpuErrchk( cudaMalloc((void**) &cu_i_ind_poly, sizeof(unsigned long long int)) );
+	gpuErrchk( cudaMemcpy(cu_i_ind_poly, &i_ind_poly, sizeof(unsigned long long int), cudaMemcpyHostToDevice) );
 	
 	int is_there_bet = 1;
 	int *cu_is_there_bet;
-	cudaMalloc((void**) &cu_is_there_bet, sizeof(int));
+	gpuErrchk( cudaMalloc((void**) &cu_is_there_bet, sizeof(int)) );
 	//cudaMemcpy(cu_is_there_bet, &is_there_bet, 1*sizeof(int), cudaMemcpyHostToDevice);
 
 	int enumber = 3*tnumber;
@@ -150,11 +145,11 @@ int main(int argc, char* argv[])
 	//int numBlocks  = (int)tnumber/numThreads;
 	int numBlocks  = (tnumber + (numThreads-1))/numThreads;
 	int numBlocks_edge  = (enumber + (numThreads-1))/numThreads;
-
+	std::cout<<"Llamando con "<<numBlocks<<" bloques y "<<numThreads<<std::endl;
 
 	//Inicializar seeds y trivertex
 	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, tnumber);
-	cudaDeviceSynchronize();
+	gpuErrchk( cudaDeviceSynchronize() );
 	
 	auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -164,7 +159,7 @@ int main(int argc, char* argv[])
 	std::cout<<"Inicia label longest"<<std::endl;
 	auto tb_label_max = std::chrono::high_resolution_clock::now();
 	label_longest_edges<<<numBlocks, numThreads>>>(cu_max, cu_r, cu_triangles, tnumber);
-	cudaDeviceSynchronize();
+	gpuErrchk( cudaDeviceSynchronize() );
 	auto te_label_max = std::chrono::high_resolution_clock::now();
 	
 
@@ -173,14 +168,14 @@ int main(int argc, char* argv[])
 	//get_seeds<<<numBlocks, numThreads>>>(cu_max, cu_triangles, cu_adj, cu_seed, tnumber);
 	std::cout<<"inicia get seeds"<<std::endl;
 	get_seeds<<<numBlocks_edge, numThreads>>>(cu_max, cu_triangles, cu_adj, cu_seed, enumber);
-	cudaDeviceSynchronize();
+	gpuErrchk( cudaDeviceSynchronize() );
 	auto te_label_seed = std::chrono::high_resolution_clock::now();
 
 	auto tb_label_non_frontier = std::chrono::high_resolution_clock::now();
 	//Etiquetar label frontier-edges
 	//label_frontier_edges<<<numBlocks, numThreads>>>(cu_max, cu_disconnect, cu_triangles, cu_adj, tnumber);
 	label_frontier_edges<<<numBlocks_edge, numThreads>>>(cu_max, cu_triangles, cu_adj, enumber);
-	cudaDeviceSynchronize();
+	gpuErrchk( cudaDeviceSynchronize() );
 	auto te_label_non_frontier = std::chrono::high_resolution_clock::now();
 	std::cout<<"terminado label frontier"<<std::endl;
 
@@ -209,17 +204,17 @@ int main(int argc, char* argv[])
 	auto tb_travel = std::chrono::high_resolution_clock::now();
 	generate_mesh<<<numBlocks, numThreads>>>(cu_triangles, cu_adj, cu_r, cu_seed, cu_mesh, tnumber, cu_i_mesh, cu_ind_poly, cu_i_ind_poly);
 	std::cout<<"terminado mesh generation"<<std::endl;
-	cudaDeviceSynchronize();
+	
 	auto te_travel = std::chrono::high_resolution_clock::now();
+	gpuErrchk( cudaDeviceSynchronize() );
 	
-	
-	cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
+	gpuErrchk( cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost) );
+	gpuErrchk( cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(unsigned long long int), cudaMemcpyDeviceToHost) );
 
 	
-	cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(seed, cu_seed, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+	gpuErrchk( cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost));
+	gpuErrchk( cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost));
+	gpuErrchk( cudaMemcpy(seed, cu_seed, tnumber*sizeof(int), cudaMemcpyDeviceToHost));
 
 
 	int num_poly;
@@ -230,7 +225,7 @@ int main(int argc, char* argv[])
 	auto tb_reparation = std::chrono::high_resolution_clock::now();
 	while(is_there_bet)
 	{
-		cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(unsigned long long int), cudaMemcpyDeviceToHost) );
 
 		num_poly = i_ind_poly;
 		
@@ -238,9 +233,9 @@ int main(int argc, char* argv[])
 		i_ind_poly = 0;
 		is_there_bet = 0;
 
-		cudaMemcpy(cu_i_mesh, &i_mesh, sizeof(int), cudaMemcpyHostToDevice);
-		cudaMemcpy(cu_i_ind_poly, &i_ind_poly, sizeof(int), cudaMemcpyHostToDevice);
-		cudaMemcpy(cu_is_there_bet, &is_there_bet, sizeof(int), cudaMemcpyHostToDevice);
+		gpuErrchk( cudaMemcpy(cu_i_mesh, &i_mesh, sizeof(unsigned long long int), cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(cu_i_ind_poly, &i_ind_poly, sizeof(unsigned long long int), cudaMemcpyHostToDevice) );
+		gpuErrchk( cudaMemcpy(cu_is_there_bet, &is_there_bet, sizeof(int), cudaMemcpyHostToDevice) );
 
 		if(counter%2 == 0){
 			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
@@ -252,10 +247,10 @@ int main(int argc, char* argv[])
 			//std::cout<<"mesh esta en cu_mesh"<<std::endl;
 		}
 		
-		cudaDeviceSynchronize();
+		gpuErrchk( cudaDeviceSynchronize() );
 
 		counter++;
-		cudaMemcpy(&is_there_bet, cu_is_there_bet, 1*sizeof(int), cudaMemcpyDeviceToHost);	
+		gpuErrchk( cudaMemcpy(&is_there_bet, cu_is_there_bet, 1*sizeof(int), cudaMemcpyDeviceToHost) );	
 		//std::cout<<"has_bet? "<<is_there_bet<<", counter: "<<counter<<std::endl;	
 	}
 	
@@ -264,16 +259,16 @@ int main(int argc, char* argv[])
 
 	if(counter%2 != 0){
 	//	std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
-		cudaMemcpy(mesh, cu_mesh_aux, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-		cudaMemcpy(ind_poly, cu_ind_poly_aux, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+		gpuErrchk( cudaMemcpy(mesh, cu_mesh_aux, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
+		gpuErrchk( cudaMemcpy(ind_poly, cu_ind_poly_aux, tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
 	}else{
 	//	std::cout<<"mesh esta en cu_mesh"<<std::endl;
-		cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
-		cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost);
+		gpuErrchk(cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
+		gpuErrchk(cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
 	}
 
-	cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(int), cudaMemcpyDeviceToHost);
-	cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(int), cudaMemcpyDeviceToHost);
+	gpuErrchk( cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(unsigned long long int), cudaMemcpyDeviceToHost) );
+	gpuErrchk( cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(unsigned long long int), cudaMemcpyDeviceToHost) );
 
 	write_geomview(name, r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
 
@@ -331,18 +326,17 @@ int main(int argc, char* argv[])
 	free(max);
 	free(ind_poly);
 
-	cudaFree(cu_r);
-	cudaFree(cu_triangles);
-	cudaFree(cu_adj);
-	cudaFree(cu_seed);
-	cudaFree(cu_mesh);
-	cudaFree(cu_max);
-	cudaFree(cu_i_mesh);
-	//cudaFree(cu_disconnect);
-	cudaFree(cu_ind_poly);
-	cudaFree(cu_mesh_aux);
-	cudaFree(cu_ind_poly_aux);
-	cudaFree(cu_trivertex);
+	gpuErrchk( cudaFree(cu_r) );
+	gpuErrchk( cudaFree(cu_triangles) );
+	gpuErrchk( cudaFree(cu_adj) );
+	gpuErrchk( cudaFree(cu_seed) );
+	gpuErrchk( cudaFree(cu_mesh) );
+	gpuErrchk( cudaFree(cu_max) );
+	gpuErrchk( cudaFree(cu_i_mesh) );
+	gpuErrchk( cudaFree(cu_ind_poly) );
+	gpuErrchk( cudaFree(cu_mesh_aux) );
+	gpuErrchk( cudaFree(cu_ind_poly_aux) );
+	gpuErrchk( cudaFree(cu_trivertex) );
 	return EXIT_SUCCESS;
 }
     
