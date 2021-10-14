@@ -457,13 +457,14 @@ __device__ int generate_polygon_from_BET_removal(int i, int * poly, int * triang
 
 
 //Split a polygon in two and save it in the same array
-__device__ int split_poly(int * poly, int length_poly, int * triangles, int * adj, double *r,  int &pos2_poly, int tnumber){
+__device__ int split_poly(int * poly, int length_poly, int * triangles, int * adj, double *r, int* cu_trivertex, int &pos2_poly, int tnumber){
 
 	int v_be, v_other, t1,t2, ipoly, ipoly_after;
 
 
 	v_be = get_vertex_BarrierEdge(poly, length_poly);
-	t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, triangles, adj, tnumber);
+	//t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, triangles, adj, tnumber);
+	t1 = search_triangle_by_vertex_with_FrontierEdge_from_trivertex(v_be, triangles, adj, tnumber, cu_trivertex);
 	v_other = optimice_middle_edge_no_memory(&t1, v_be, triangles, adj);
 	t2 = get_adjacent_triangle(t1, v_other, v_be, triangles, adj);
 
@@ -497,7 +498,7 @@ __device__ int split_poly(int * poly, int length_poly, int * triangles, int * ad
 //OUTPUT
 //cu_mesh_aux: new polygon mesh
 //is_there_bet: atomic variable to check if there are bet or not
-__global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, int *cu_i_mesh, int* cu_i_ind_poly, int *is_there_bet){
+__global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly, int *cu_ind_poly, int *cu_ind_poly_aux, int *cu_triangles, int tnumber, int *cu_adj, double *cu_r, unsigned long long int *cu_i_mesh, unsigned long long int* cu_i_ind_poly, int* cu_trivertex, int *is_there_bet){
 
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     //int i_mesh, i_mesh2, bet, length_poly, poly[100], k, pos2_poly;
@@ -524,7 +525,7 @@ __global__ void polygon_reparation(int* cu_mesh, int* cu_mesh_aux, int num_poly,
 			}
 			//printf("\n");
 
-			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, pos2_poly, tnumber);
+			length_poly = split_poly(poly, length_poly, cu_triangles, cu_adj, cu_r, cu_trivertex, pos2_poly, tnumber);
 			i_mesh = atomicAdd(cu_i_mesh, length_poly); //imesh indice inicial a guardar
 			i_ind_poly = atomicAdd(cu_i_ind_poly, 2);
 			for(k = 0; k < length_poly; k++)

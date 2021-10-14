@@ -62,9 +62,9 @@ int main(int argc, char* argv[])
 	int *trivertex;
 	
 	std::string name(argv[1]);
-	std::cout<<name<<std::endl;
+	//std::cout<<name<<std::endl;
 	read_from_triangle(name, pnumber, tnumber, r, triangles, adj, trivertex);
-	std::cout << " " << tnumber << " " << pnumber << "\n";
+	//std::cout << " " << tnumber << " " << pnumber << "\n";
 
     //tnumber = Tr->tnumber;
     //pnumber = Tr->pnumber;
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 	int *cu_ind_poly_aux;
 	int *cu_trivertex;
 
-	std::cout << "Solicitando memoria cuda"<<std::endl;
+	//std::cout << "Solicitando memoria cuda"<<std::endl;
 
 	// Allocate device memory.
 	gpuErrchk( cudaMalloc((void**) &cu_max,          tnumber*sizeof(int)) );
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 	gpuErrchk( cudaMalloc((void**) &cu_ind_poly_aux, tnumber*sizeof(int)) );
 	gpuErrchk( cudaMalloc((void**) &cu_trivertex,    pnumber*sizeof(int)) );
 
-	std::cout << "Solicitada memoria cuda"<<std::endl;
+	//std::cout << "Solicitada memoria cuda"<<std::endl;
 
 		
     // Transfer arrays to device.
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 	gpuErrchk( cudaMemcpy(cu_ind_poly, ind_poly,     tnumber*sizeof(int), cudaMemcpyHostToDevice) );
 	gpuErrchk( cudaMemcpy(cu_trivertex, trivertex,   pnumber*sizeof(int), cudaMemcpyHostToDevice) );
 	
-	std::cout<<"copiada memoria cuda"<<std::endl;
+	//std::cout<<"copiada memoria cuda"<<std::endl;
 
 	//se consigue el indice de la malla i_mesh
 	unsigned long long int i_mesh = 0;
@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
 	int is_there_bet = 1;
 	int *cu_is_there_bet;
 	gpuErrchk( cudaMalloc((void**) &cu_is_there_bet, sizeof(int)) );
-	//cudaMemcpy(cu_is_there_bet, &is_there_bet, 1*sizeof(int), cudaMemcpyHostToDevice);
+	//cudaMemcpy(cu_is_there_bet, &is_there_bet, sizeof(int), cudaMemcpyHostToDevice);
 
 	int enumber = 3*tnumber;
 
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 	//int numBlocks  = (int)tnumber/numThreads;
 	int numBlocks  = (tnumber + (numThreads-1))/numThreads;
 	int numBlocks_edge  = (enumber + (numThreads-1))/numThreads;
-	std::cout<<"Llamando con "<<numBlocks<<" bloques y "<<numThreads<<std::endl;
+	//std::cout<<"Llamando con "<<numBlocks<<" bloques y "<<numThreads<<std::endl;
 
 	//Inicializar seeds y trivertex
 	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, tnumber);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 	auto tb_label =std::chrono::high_resolution_clock::now();	
 	//Label phase
 	//Etiquetar el más largo;
-	std::cout<<"Inicia label longest"<<std::endl;
+	//std::cout<<"Inicia label longest"<<std::endl;
 	auto tb_label_max = std::chrono::high_resolution_clock::now();
 	label_longest_edges<<<numBlocks, numThreads>>>(cu_max, cu_r, cu_triangles, tnumber);
 	gpuErrchk( cudaDeviceSynchronize() );
@@ -166,7 +166,7 @@ int main(int argc, char* argv[])
 	//Encontrar un triangulo semilla asociado al arco terminal
 	auto tb_label_seed = std::chrono::high_resolution_clock::now();
 	//get_seeds<<<numBlocks, numThreads>>>(cu_max, cu_triangles, cu_adj, cu_seed, tnumber);
-	std::cout<<"inicia get seeds"<<std::endl;
+	//std::cout<<"inicia get seeds"<<std::endl;
 	get_seeds<<<numBlocks_edge, numThreads>>>(cu_max, cu_triangles, cu_adj, cu_seed, enumber);
 	gpuErrchk( cudaDeviceSynchronize() );
 	auto te_label_seed = std::chrono::high_resolution_clock::now();
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
 	label_frontier_edges<<<numBlocks_edge, numThreads>>>(cu_max, cu_triangles, cu_adj, enumber);
 	gpuErrchk( cudaDeviceSynchronize() );
 	auto te_label_non_frontier = std::chrono::high_resolution_clock::now();
-	std::cout<<"terminado label frontier"<<std::endl;
+	//std::cout<<"terminado label frontier"<<std::endl;
 
 	auto te_label =std::chrono::high_resolution_clock::now();
 
@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
 	//Se ordenan las semillas
 	//cudaMemcpy(adj, cu_adj,3*tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	//for (i = 0; i < tnumber; i++)
-	//	std::cout<<adj[3*i+0]<<" "<<adj[3*i+1]<<" "<<adj[3*i+2]<<"\n";
+	//	//std::cout<<adj[3*i+0]<<" "<<adj[3*i+1]<<" "<<adj[3*i+2]<<"\n";
 
 	//cudaMemcpy(seed, cu_seed,tnumber*sizeof(int), cudaMemcpyDeviceToHost);
 	//int num_region = 0;
@@ -197,14 +197,12 @@ int main(int argc, char* argv[])
 	//	}
 	//}
 	//for (i = 0; i < num_region; i++)
-	//	std::cout<<seed[i]<<" ";
-	//std::cout<<"\nregiones = "<<num_region<<std::endl;
+	//	//std::cout<<seed[i]<<" ";
+	////std::cout<<"\nregiones = "<<num_region<<std::endl;
 
 
 	auto tb_travel = std::chrono::high_resolution_clock::now();
 	generate_mesh<<<numBlocks, numThreads>>>(cu_triangles, cu_adj, cu_r, cu_seed, cu_mesh, tnumber, cu_i_mesh, cu_ind_poly, cu_i_ind_poly);
-	std::cout<<"terminado mesh generation"<<std::endl;
-	
 	auto te_travel = std::chrono::high_resolution_clock::now();
 	gpuErrchk( cudaDeviceSynchronize() );
 	
@@ -218,8 +216,8 @@ int main(int argc, char* argv[])
 
 
 	int num_poly;
-	//std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
-	std::cout<<"Iniciando mesh reparation num poly: "<<i_ind_poly<<std::endl;
+	////std::cout<<"\n num poly: "<<i_ind_poly<<std::endl;
+	//std::cout<<"Iniciando mesh reparation num poly: "<<i_ind_poly<<std::endl;
 	int counter = 0;
 	//cudaMemcpy(cu_ind_poly_aux, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToDevice);
 	auto tb_reparation = std::chrono::high_resolution_clock::now();
@@ -239,30 +237,30 @@ int main(int argc, char* argv[])
 
 		if(counter%2 == 0){
 			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
-			//polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
-			//std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
+			//polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh, cu_mesh_aux, num_poly, cu_ind_poly, cu_ind_poly_aux, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
+			////std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
 		}else{
 			polygon_reparation2<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
-			//polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_is_there_bet);
-			//std::cout<<"mesh esta en cu_mesh"<<std::endl;
+			//polygon_reparation<<<numBlocks, numThreads>>>(cu_mesh_aux, cu_mesh, num_poly, cu_ind_poly_aux, cu_ind_poly, cu_triangles, tnumber, cu_adj, cu_r, cu_i_mesh, cu_i_ind_poly, cu_trivertex, cu_is_there_bet);
+			////std::cout<<"mesh esta en cu_mesh"<<std::endl;
 		}
 		
 		gpuErrchk( cudaDeviceSynchronize() );
 
 		counter++;
-		gpuErrchk( cudaMemcpy(&is_there_bet, cu_is_there_bet, 1*sizeof(int), cudaMemcpyDeviceToHost) );	
-		//std::cout<<"has_bet? "<<is_there_bet<<", counter: "<<counter<<std::endl;	
+		gpuErrchk( cudaMemcpy(&is_there_bet, cu_is_there_bet, sizeof(int), cudaMemcpyDeviceToHost) );	
+		////std::cout<<"has_bet? "<<is_there_bet<<", counter: "<<counter<<std::endl;	
 	}
 	
 	auto te_reparation = std::chrono::high_resolution_clock::now();
 	auto t2 = std::chrono::high_resolution_clock::now();
 
 	if(counter%2 != 0){
-	//	std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
+	//	//std::cout<<"mesh esta en cu_mesh_aux"<<std::endl;
 		gpuErrchk( cudaMemcpy(mesh, cu_mesh_aux, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
 		gpuErrchk( cudaMemcpy(ind_poly, cu_ind_poly_aux, tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
 	}else{
-	//	std::cout<<"mesh esta en cu_mesh"<<std::endl;
+	//	//std::cout<<"mesh esta en cu_mesh"<<std::endl;
 		gpuErrchk(cudaMemcpy(mesh, cu_mesh, 3*tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
 		gpuErrchk(cudaMemcpy(ind_poly, cu_ind_poly, tnumber*sizeof(int), cudaMemcpyDeviceToHost) );
 	}
@@ -275,13 +273,20 @@ int main(int argc, char* argv[])
 	std::cout << std::setprecision(3) << std::fixed;
     std::cout <<"pnumber tnumber num_reg talgorithm tlabel tlabel_max tlabel_seed tlabel_non_frontier ttravel ttreparation"<<std::endl;
 	std::cout<<pnumber<<" "<<tnumber<<" "<<i_ind_poly;
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1 ).count();
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label - tb_label).count();
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_max - tb_label_max).count();
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_seed - tb_label_seed).count();
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_label_non_frontier - tb_label_non_frontier).count();
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
-	std::cout<<" "<<std::chrono::duration_cast<std::chrono::milliseconds>(te_reparation - tb_reparation ).count();
+	uint total =std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1 ).count();
+	uint t_label = std::chrono::duration_cast<std::chrono::milliseconds>(te_label - tb_label).count();
+	uint t_label_max = std::chrono::duration_cast<std::chrono::milliseconds>(te_label_max - tb_label_max).count();
+	uint t_label_seed = std::chrono::duration_cast<std::chrono::milliseconds>(te_label_seed - tb_label_seed).count();
+	uint t_label_non_frontier = std::chrono::duration_cast<std::chrono::milliseconds>(te_label_non_frontier - tb_label_non_frontier).count();
+	uint t_travel = std::chrono::duration_cast<std::chrono::milliseconds>(te_travel - tb_travel ).count();
+	uint t_reparation = std::chrono::duration_cast<std::chrono::milliseconds>(te_reparation - tb_reparation ).count();
+	std::cout<<" "<<t_label + t_travel + t_reparation;
+	std::cout<<" "<<t_label;
+	std::cout<<" "<<t_label_max;
+	std::cout<<" "<<t_label_seed;
+	std::cout<<" "<<t_label_non_frontier;
+	std::cout<<" "<<t_travel;
+	std::cout<<" "<<t_reparation;
 	std::cout<<std::endl;
 /*
   	//imprimir polginos

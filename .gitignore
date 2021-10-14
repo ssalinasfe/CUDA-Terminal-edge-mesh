@@ -2,4 +2,6 @@ build/
 scripts/2x2_*
 scripts/10000x10000_*
 scripts/output/*
+scripts/PolyllaCUDA
+scripts/Polylla
 scripts/generatetrivertex
