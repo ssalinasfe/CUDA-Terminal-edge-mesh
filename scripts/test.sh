@@ -6,6 +6,6 @@ i=1000000
 while [ $i -le 8000000 ]
 do
   echo $i 
-  (eval "./PolyllaCUDA 10000x10000_$i.1" >> results.txt)
+  (eval "./Polylla 10000x10000_$i.1" >> resultsSEQ3_nontrivertex.txt)
   i=$(($i + 500000))
 done

@@ -141,12 +141,14 @@ int main(int argc, char* argv[])
 	int enumber = 3*tnumber;
 
 	//https://stackoverflow.com/questions/47822784/calculating-grid-and-block-dimensions-of-a-kernel
-	int numThreads = 128;  // max register per block is 65536, 65536/512
+	//int numThreads = 128;  // max register per block is 65536, 65536/512
 	//int numBlocks  = (int)tnumber/numThreads;
-	int numBlocks  = (tnumber + (numThreads-1))/numThreads;
-	int numBlocks_edge  = (enumber + (numThreads-1))/numThreads;
+	//int numBlocks  = (tnumber + (numThreads-1))/numThreads;
+	//int numBlocks_edge  = (enumber + (numThreads-1))/numThreads;
 	//std::cout<<"Llamando con "<<numBlocks<<" bloques y "<<numThreads<<std::endl;
-
+	int numBlocks  = 65535;
+	int numBlocks_edge = 65535;
+	int numThreads = 1024;
 	//Inicializar seeds y trivertex
 	initialize_memory<<<numBlocks, numThreads>>>(cu_seed, tnumber);
 	gpuErrchk( cudaDeviceSynchronize() );
