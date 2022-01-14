@@ -1,7 +1,5 @@
 build/
-scripts/2x2_*
-scripts/10000x10000_*
-scripts/output/*
-scripts/PolyllaCUDA
-scripts/Polylla
-scripts/generatetrivertex
+examples/*
+!examples/square_1000000.1.node
+!examples/square_1000000.1.ele
+!examples/square_1000000.1.neigh

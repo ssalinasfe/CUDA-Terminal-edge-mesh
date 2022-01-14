@@ -62,6 +62,7 @@ int main(int argc, char* argv[])
 	int *trivertex;
 	
 	std::string name(argv[1]);
+	std::string output(argv[2]);
 	//std::cout<<name<<std::endl;
 	read_from_triangle(name, pnumber, tnumber, r, triangles, adj, trivertex);
 	//std::cout << " " << tnumber << " " << pnumber << "\n";
@@ -270,8 +271,8 @@ int main(int argc, char* argv[])
 	gpuErrchk( cudaMemcpy(&i_mesh, cu_i_mesh, sizeof(unsigned long long int), cudaMemcpyDeviceToHost) );
 	gpuErrchk( cudaMemcpy(&i_ind_poly, cu_i_ind_poly, sizeof(unsigned long long int), cudaMemcpyDeviceToHost) );
 
-	write_geomview(name, r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
-
+	write_geomview(output, r, triangles, pnumber, tnumber, i_mesh, mesh, seed, i_ind_poly, 0);
+	std::cout<<"File output in "<<output + ".off"<<std::endl;
 	std::cout << std::setprecision(3) << std::fixed;
     std::cout <<"pnumber tnumber num_reg talgorithm tlabel tlabel_max tlabel_seed tlabel_non_frontier ttravel ttreparation"<<std::endl;
 	std::cout<<pnumber<<" "<<tnumber<<" "<<i_ind_poly;

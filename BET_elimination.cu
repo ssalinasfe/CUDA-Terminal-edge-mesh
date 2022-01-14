@@ -600,8 +600,8 @@ __global__ void polygon_reparation2(int* cu_mesh, int* cu_mesh_aux, int num_poly
 			
 			
 			//v_be = get_vertex_BarrierEdge(poly, length_poly);
-			//t1 = search_triangle_by_vertex_with_FrontierEdge_from_trivertex(v_be, cu_triangles, cu_adj, tnumber, cu_trivertex);
-			t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, cu_triangles, cu_adj, tnumber);
+			t1 = search_triangle_by_vertex_with_FrontierEdge_from_trivertex(v_be, cu_triangles, cu_adj, tnumber, cu_trivertex);
+			//t1 = search_triangle_by_vertex_with_FrontierEdge(v_be, cu_triangles, cu_adj, tnumber);
 			v_other = optimice_middle_edge_no_memory(&t1, v_be, cu_triangles, cu_adj);
 			t2 = get_adjacent_triangle(t1, v_other, v_be, cu_triangles, cu_adj);
 

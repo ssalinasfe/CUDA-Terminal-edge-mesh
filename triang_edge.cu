@@ -306,43 +306,29 @@ __global__ void label_longest_edges(int *cu_max, double *cu_r, int *cu_triangles
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     if(i < tnumber)
-    {
+
         cu_max[i] = max_edge_index(i,cu_r, cu_triangles);
-        //printf("cu_triangle %d %d %d ", cu_triangles[3*i+0], cu_triangles[3*i+1], cu_triangles[3*i+2]);
-    }
 
 }
 
-__global__ void get_seeds(int *cu_max, int *cu_triangles, int *cu_adj, int *cu_seed, int enumber)
-{
+__global__ void get_seeds(int *cu_max, int *cu_triangles, int *cu_adj, int *cu_seed, int enumber){
     int N = blockDim.x * blockIdx.x + threadIdx.x;
     int i = floorf(N/3);
     int j = N - 3*i;
-    if(N < enumber)
-    {
+    if(N < enumber){
         if(cu_adj[N] != -1 && is_max_max(i, cu_adj[N], cu_triangles, cu_max) == TRUE)
-        {
-            if(cu_adj[N] < i){ //si hay dos triangulos a ser semilla se elige el con menor indice
+            if(cu_adj[N] < i)
                 cu_seed[i] = TRUE;
-                
-            }
-        }
-        //esto se puede optimizar, mezclaro con la operación de arriba
-        if (cu_adj[N] == -1 && cu_max[i] == (j+1)%3){ //si es terminal-boder edge
+        if (cu_adj[N] == -1 && cu_max[i] == (j+1)%3)
             cu_seed[i] = TRUE;
-        }
     }
 }
 
-__global__ void label_frontier_edges(int *cu_max, int *cu_triangles, int *cu_adj, int enumber)
-{
+__global__ void label_frontier_edges(int *cu_max, int *cu_triangles, int *cu_adj, int enumber){
     int N = blockDim.x * blockIdx.x + threadIdx.x;
     int i = floorf(N/3);
     if(N < enumber)
-    {
-        //cu_disconnect[N] = (cu_adj[N] != -1) && is_nomax_nomax(i, cu_adj[N], cu_triangles, cu_max);
         cu_adj[N] = ((cu_adj[N] < 0) || is_nomax_nomax(i, cu_adj[N], cu_triangles, cu_max)) ? -1 : cu_adj[N];
-    }
 
 }
 

@@ -29,6 +29,7 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
 
         std::getline(nodefile, line); 
         points = (double *)malloc(2*pnumber*sizeof(double));
+        
         while (nodefile >> a1 >> a2 >> a3 >> a4)
         {
             points[2*i + 0] = a2;
@@ -54,6 +55,8 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
     if(elefile.is_open()){
         elefile >> tnumber ;
         triangles = (int *)malloc(3*tnumber*sizeof(int));
+        trivertex =(int *)malloc(pnumber*sizeof(int));
+
         std::getline(elefile, line); 
         while (elefile >> t1 >> t2 >> t3 >> t4 )
         {
@@ -61,6 +64,9 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
             triangles[3*i + 0] = t2;
             triangles[3*i + 1] = t3;
             triangles[3*i + 2] = t4;
+            trivertex[t2] = i;
+            trivertex[t3] = i;
+            trivertex[t4] = i;
             //std::cout<<triangles[3*i + 0]<<" "<<triangles[3*i + 1]<<" "<<triangles[3*i + 2]<<std::endl;
             i++;
         }
@@ -71,7 +77,7 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
 
     elefile.close();
 
-    //std::cout<<"Neigh file"<<std::endl;
+    //std::cout<<"Neigh file "<<name + ".neigh"<<std::endl;
     std::ifstream neighfile(name + ".neigh");
     i = 0;
     if(neighfile.is_open()){
@@ -91,22 +97,6 @@ void read_from_triangle(std::string name, int &pnumber, int &tnumber, double *&p
     }
     neighfile.close();
 
-    //std::cout<<"Neigh file"<<std::endl;
-    std::ifstream trivertexfile(name + ".trivertex");
-    i = 0;
-    if(trivertexfile.is_open()){
-        std::getline(trivertexfile, line); 
-        trivertex =(int *)malloc(pnumber*sizeof(int));
-        while (trivertexfile >> t1 >> t2)
-        {
-            trivertex[i] = t2;
-            i++;
-        }
-    }else{
-        std::cout << "Unable to open neigh file";
-        exit(-1);
-    } 
-    trivertexfile.close();
 }
 
 /*geomview output*/
@@ -114,7 +104,6 @@ void write_geomview(std::string name, double *r, int *triangles, int pnumber, in
 
     int i,j;
     char cmd[1024] = "\0";
-    strcat(cmd, filespathoutput);
     strcat(cmd, name.c_str());
     strcat(cmd,".off");
     
